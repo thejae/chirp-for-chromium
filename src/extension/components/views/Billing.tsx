@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import { CreditCard, DollarSign, Key } from 'react-feather'
-import { Notice } from '../copy/Notice.jsx'
+import { CreditCard, DollarSign, Key, LogOut } from 'react-feather'
+import { FreeNotice, HowToUseTip, Notice } from '../copy/Notice.jsx'
 import { PricingTable } from '../copy/PricingTable.jsx'
 import { ApiKeyForm } from '../forms/ApiKey.js'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +12,10 @@ import { useStore } from '../../../hooks/useStore.js'
 import { errorStore } from '../../extension.js'
 import { isError } from '../../helpers/error-helpers.js'
 
+/**
+ * Billing & Credentials view managing prepaid credit purchases, invoice
+ * receipts, and BYO Google Cloud API key setup.
+ */
 export function Billing() {
   const navigate = useNavigate()
   const [invoices, setInvoices] = React.useState([])
@@ -19,7 +23,7 @@ export function Billing() {
   const { session, ready: sessionReady } = useSession()
   const { sync, setSync, ready: syncReady } = useSync()
   const form = ApiKeyForm.Validator(() => navigate('/preferences'))
-  const [error, setError] = useStore(errorStore)
+  const [, setError] = useStore(errorStore)
   const paymentSession = session?.paymentSession
 
   useEffect(() => {
@@ -51,17 +55,24 @@ export function Billing() {
     window.open(paymentSession.hosted_invoice_url)
   }
 
-  if (!sessionReady || !syncReady) return
+  if (!sessionReady || !syncReady) {
+    return (
+      <div className="text-xs text-neutral-500 py-6 text-center">
+        Loading billing details…
+      </div>
+    )
+  }
 
   function renderCredentials() {
     if (sync.mode === 'paid') return null
 
     return (
       <div>
-        <div className="font-semibold text-neutral-700 mb-1.5 ml-1 flex items-center">
-          Credentials
-        </div>
-        <div className="bg-white p-3 rounded shadow-sm border flex flex-col gap-2">
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+          Google Cloud Credentials
+        </h2>
+        <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3">
+          <FreeNotice />
           <ApiKeyForm.Content form={form} sync={sync} setSync={setSync} />
           <ApiKeyForm.Buttons form={form} sync={sync} setSync={setSync} />
         </div>
@@ -74,15 +85,14 @@ export function Billing() {
 
     return (
       <div>
-        <div className="font-semibold text-neutral-700 mb-1.5 ml-1 flex items-center">
-          Payment method
-        </div>
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+          Payment & Credits
+        </h2>
         {!sync.user?.credits && (
-          <div className="bg-white p-3 rounded shadow-sm border flex flex-col">
+          <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3">
             <Notice />
-            <br />
             <PricingTable />
-            <div className="flex mt-3">
+            <div className="flex gap-2 pt-1">
               <Button
                 className="max-w-fit"
                 key="close"
@@ -92,7 +102,7 @@ export function Billing() {
                 Use API key
               </Button>
               <Button
-                className="w-full ml-2"
+                className="w-full"
                 type="primary"
                 key="support"
                 Icon={CreditCard}
@@ -101,7 +111,7 @@ export function Billing() {
                 ping={paymentSession}
               >
                 {paymentSession
-                  ? 'Waiting for payment'
+                  ? 'Waiting for payment…'
                   : 'Purchase credits ($9.75)'}
               </Button>
             </div>
@@ -109,32 +119,40 @@ export function Billing() {
         )}
 
         {sync.user?.credits > 0 && (
-          <div className="bg-white p-3 rounded shadow-sm border flex flex-col gap-2">
-            <p>
-              Please contact{' '}
+          <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3 text-xs leading-relaxed text-neutral-700">
+            <div className="flex items-center justify-between bg-emerald-50/80 border border-emerald-200 rounded-md px-3 py-2">
+              <span className="text-neutral-700">Available balance</span>
+              <span className="font-bold text-emerald-800 tabular-nums text-sm">
+                {creditFormat(sync.user.credits)}
+              </span>
+            </div>
+            <p className="text-neutral-600">
+              Need to update your payment method or have a billing question?
+              Contact{' '}
               <a
-                className="text-blue-700 font-semibold underline"
+                className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2"
                 href="mailto:michael.poirierginter@gmail.com"
               >
                 michael.poirierginter@gmail.com
-              </a>{' '}
-              if you wish to change your payment method or if you have any
-              questions.
+              </a>
+              .
             </p>
             <div className="flex gap-2">
               <Button
                 className="w-full"
+                Icon={Key}
+                onClick={() => setSync({ ...sync, mode: 'free' })}
+              >
+                Switch to API key
+              </Button>
+              <Button
+                className="max-w-fit"
+                Icon={LogOut}
                 onClick={async () => {
                   setSync({ ...sync, mode: 'free', user: null })
                 }}
               >
-                Logout
-              </Button>
-              <Button
-                className="w-full"
-                onClick={() => setSync({ ...sync, mode: 'free' })}
-              >
-                Use my own API key instead
+                Sign out
               </Button>
             </div>
           </div>
@@ -149,10 +167,10 @@ export function Billing() {
 
     return (
       <div>
-        <div className="font-semibold text-neutral-700 mb-1.5 ml-1 flex items-center">
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
           Invoices
-        </div>
-        <div className="bg-white rounded shadow-sm border flex flex-col">
+        </h2>
+        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 divide-y divide-neutral-200/70 flex flex-col overflow-hidden">
           {invoices.map((invoice) => (
             <Invoice key={invoice.id} {...invoice} />
           ))}
@@ -162,29 +180,30 @@ export function Billing() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {renderCredentials()}
       {renderPaymentMethods()}
       {renderInvoices()}
+      <HowToUseTip />
     </div>
   )
 }
 
 function Invoice(props) {
   return (
-    <div className="flex justify-center items-center p-3 even:bg-neutral-50">
-      <div className="bg-green-200 text-green-800 rounded mr-2">
-        <DollarSign className="m-1.5" size={16} />
+    <div className="flex items-center px-3.5 py-2.5 even:bg-neutral-50/70 text-xs">
+      <div className="bg-emerald-100 text-emerald-800 rounded p-1 mr-2.5 shrink-0">
+        <DollarSign size={14} />
       </div>
-      <div className="font-semibold text-neutral-700">
+      <div className="font-medium text-neutral-700 tabular-nums">
         {dateFormat(props.inserted_at)}
       </div>
 
       <Button
-        className="ml-auto w-fit"
+        className="ml-auto w-fit py-1 px-2.5"
         onClick={() => chrome.tabs.create({ url: props.hosted_invoice_url })}
       >
-        View receipt ({creditFormat(props.amount, 100)})
+        Receipt ({creditFormat(props.amount, 100)})
       </Button>
     </div>
   )

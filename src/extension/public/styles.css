@@ -4,16 +4,50 @@
 
 * {
   box-sizing: border-box;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  accent-color: #2563eb;
 }
 
 /* Reset all host styles for the content script, and to the popup so it matches */
 :host,
 #root {
   all: unset;
+  color: #262626;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: #0d6efd;
+  background: #2563eb;
   color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

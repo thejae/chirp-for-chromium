@@ -2,45 +2,49 @@ import React from 'react'
 import { creditFormat, dateFormat } from '../../helpers/formatting-helpers.js'
 import { useMount } from '../../../hooks/useMount.js'
 
+/**
+ * Credit balance and synthesis history ledger for paid-mode accounts.
+ */
 export function Usage() {
   const [user, setUser] = React.useState(null)
-  const [loadingUser, setLoadingUser] = React.useState(false)
+  const [loadingUser, setLoadingUser] = React.useState(true)
 
   const [usage, setUsage] = React.useState([])
-  const [loadingUsage, setLoadingUsage] = React.useState(false)
+  const [loadingUsage, setLoadingUsage] = React.useState(true)
 
   useMount(() => {
     setLoadingUser(true)
     setLoadingUsage(true)
     chrome.runtime.sendMessage({ id: 'fetchUser' }, (response) => {
+      setLoadingUser(false)
       if (!response) return
 
       setUser(response)
-      setLoadingUser(false)
     })
 
     chrome.runtime.sendMessage({ id: 'fetchUsage' }, (response) => {
+      setLoadingUsage(false)
       if (!response) return
 
       setUsage(response)
-      setLoadingUsage(false)
     })
   })
 
   function renderCredits() {
     return (
       <div>
-        <div className="font-semibold text-neutral-700 mb-1.5 ml-1 flex items-center">
-          Credits
-        </div>
-        <div className="bg-white p-3 rounded shadow-sm border flex flex-col gap-2">
-          <span>
-            You have{' '}
-            <span className="font-bold">
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+          Credit balance
+        </h2>
+        <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex items-center justify-between text-xs">
+          <span className="text-neutral-600">Remaining credits</span>
+          {loadingUser ? (
+            <span className="text-neutral-400">Loading balance…</span>
+          ) : (
+            <span className="font-bold text-neutral-900 tabular-nums text-sm">
               {creditFormat(user?.credits || 0)}
-            </span>{' '}
-            of credits left
-          </span>
+            </span>
+          )}
         </div>
       </div>
     )
@@ -49,14 +53,23 @@ export function Usage() {
   function renderUsage() {
     return (
       <div>
-        <div className="font-semibold text-neutral-700 mb-1.5 ml-1 flex items-center">
-          Last 100 usages
-        </div>
-        <div className="bg-white rounded shadow-sm border flex flex-col">
-          {usage.length ? (
-            usage?.map((u) => <UsageItem {...u} />)
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+          Recent syntheses (last 100)
+        </h2>
+        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 divide-y divide-neutral-200/70 flex flex-col overflow-hidden text-xs">
+          {loadingUsage ? (
+            <div className="p-4 text-neutral-500 text-center">
+              Loading usage history…
+            </div>
+          ) : usage.length ? (
+            usage.map((u, idx) => (
+              <UsageItem key={u.id || `${u.inserted_at}-${idx}`} {...u} />
+            ))
           ) : (
-            <div className="p-3">No usage yet</div>
+            <div className="p-4 text-neutral-500 text-center">
+              No synthesis usage recorded yet. Highlight text on any page and
+              choose <span className="font-medium text-neutral-700">Read aloud</span> to start.
+            </div>
           )}
         </div>
       </div>
@@ -64,7 +77,7 @@ export function Usage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {renderCredits()}
       {renderUsage()}
     </div>
@@ -73,14 +86,14 @@ export function Usage() {
 
 function UsageItem(props) {
   return (
-    <div className="flex px-4 py-3 even:bg-neutral-50">
-      <div className="font-semibold text-neutral-700">
+    <div className="flex items-center px-3.5 py-2.5 even:bg-neutral-50/70 gap-3">
+      <div className="text-neutral-600 tabular-nums">
         {dateFormat(props.inserted_at)}
       </div>
-      <div className="font-semibold text-neutral-700 ml-auto">
-        {props.character_count} characters
+      <div className="ml-auto font-medium text-neutral-900 tabular-nums">
+        {Number(props.character_count || 0).toLocaleString()} chars
       </div>
-      <div className="font-semibold text-neutral-700 ml-4">
+      <div className="text-xxs font-medium bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded">
         {props.voice_name}
       </div>
     </div>

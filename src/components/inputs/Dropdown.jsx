@@ -1,20 +1,31 @@
 import Fuse from 'fuse.js'
-import React, { useRef, useState } from 'react'
+import React, { useId, useRef, useState } from 'react'
+import { ChevronDown } from 'react-feather'
 import { twMerge } from 'tailwind-merge'
 import { useOutsideClick } from '../../hooks/useOutsideClick'
 import { useMount } from '../../hooks/useMount'
 
+/**
+ * Accessible fuzzy-searchable combobox dropdown component.
+ *
+ * Uses a scoped container ref for option scrolling so it works inside both
+ * the popup document and Shadow DOM without colliding across instances.
+ */
 export function Dropdown(props) {
+  const inputId = useId()
+  const listboxId = useId()
   const inputRef = useRef(null)
+  const listRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState(props.value)
   const [dirty, setDirty] = useState(false)
   const [index, setIndex] = useState(
-    props.options.findIndex((o) => o.value === props.value),
+    Math.max(
+      0,
+      props.options.findIndex((o) => o.value === props.value),
+    ),
   )
-  const option = props.options.find(
-    (o) => o.value === input || (o.value === props.value && !dirty),
-  )
+  const selectedOption = props.options.find((o) => o.value === props.value)
 
   const fuse = new Fuse(props.options, {
     keys: ['value', 'title', 'description'],
@@ -36,51 +47,72 @@ export function Dropdown(props) {
   }
 
   function handleChange(e) {
-    const value = e?.currentTarget?.value
+    const value = e?.currentTarget?.value ?? ''
     setDirty(true)
     setInput(value)
     setIndex(
-      value ? 0 : props.options.findIndex((o) => o.value === props.value),
+      value
+        ? 0
+        : Math.max(
+            0,
+            props.options.findIndex((o) => o.value === props.value),
+          ),
     )
-    props.onChange(value)
   }
 
   function handleClick(option) {
-    handleChange({ currentTarget: { value: option.value } })
+    if (!option || option.disabled) return
     setDirty(false)
+    setInput(option.value)
+    props.onChange(option.value)
     handleClose()
   }
 
   function handleClose() {
     setOpen(false)
     setDirty(false)
-    setIndex(props.options.findIndex((o) => o.value === props.value))
+    setInput(props.value)
+    setIndex(
+      Math.max(
+        0,
+        props.options.findIndex((o) => o.value === props.value),
+      ),
+    )
   }
 
   function handleOpen() {
+    if (props.disabled) return
     setOpen(true)
     setDirty(false)
     if (inputRef.current) inputRef.current.select()
   }
 
   function scrollIntoView({ nextIndex, previousIndex }) {
-    const index = nextIndex ?? previousIndex
-    const ref = document.querySelector(`[data-value="${options[index].value}"]`)
-    const containerRef = ref.parentNode
+    const targetIndex = nextIndex ?? previousIndex
+    const containerEl = listRef.current
+    if (!containerEl || !options[targetIndex]) return
+
+    const ref = containerEl.querySelector(
+      `[data-option-index="${targetIndex}"]`,
+    )
+    if (!ref) return
+
     const isOutOfView =
-      ref.offsetTop < containerRef.scrollTop ||
+      ref.offsetTop < containerEl.scrollTop ||
       ref.offsetTop + ref.offsetHeight >
-        containerRef.scrollTop + containerRef.offsetHeight
+        containerEl.scrollTop + containerEl.offsetHeight
 
     // Pointer events are disabled during the scroll in order to prevent
     // mouseover events from firing while scrolling which would cause
-    // the index to change and the scroll to jump around
-    containerRef.style.pointerEvents = 'none'
-    ref?.scrollIntoView({ block: 'nearest' })
+    // the index to change and the scroll to jump around.
+    containerEl.style.pointerEvents = 'none'
+    ref.scrollIntoView({ block: 'nearest' })
 
-    if (nextIndex && isOutOfView) ref.parentNode.scrollTop += 4
-    if (previousIndex && isOutOfView) ref.parentNode.scrollTop -= 4
-    setTimeout(() => (containerRef.style.pointerEvents = 'auto'), 0)
+    if (nextIndex !== undefined && isOutOfView) containerEl.scrollTop += 4
+    if (previousIndex !== undefined && isOutOfView) containerEl.scrollTop -= 4
+    setTimeout(() => {
+      if (containerEl) containerEl.style.pointerEvents = 'auto'
+    }, 0)
   }
 
   function handleKeydown(e) {
@@ -94,22 +126,34 @@ export function Dropdown(props) {
       case 'Enter':
         e.preventDefault()
         e.stopPropagation()
-        handleClick(options[index])
+        if (options[index] && !options[index].disabled) {
+          handleClick(options[index])
+        }
         break
-      case 'ArrowDown':
+      case 'ArrowDown': {
         e.preventDefault()
         e.stopPropagation()
+        if (!open) {
+          setOpen(true)
+          break
+        }
         const nextIndex = (index + 1) % options.length
         setIndex(nextIndex)
         scrollIntoView({ nextIndex })
         break
-      case 'ArrowUp':
+      }
+      case 'ArrowUp': {
         e.preventDefault()
         e.stopPropagation()
+        if (!open) {
+          setOpen(true)
+          break
+        }
         const previousIndex = (index - 1 + options.length) % options.length
         setIndex(previousIndex)
         scrollIntoView({ previousIndex })
         break
+      }
       case 'Tab':
         handleClose()
         break
@@ -117,26 +161,32 @@ export function Dropdown(props) {
   }
 
   function handleMouseOver(e) {
-    const value = e?.currentTarget?.dataset?.value
-    const index = options.findIndex((o) => o.value === value)
-    setIndex(index)
+    const idx = Number(e?.currentTarget?.dataset?.optionIndex)
+    if (!Number.isNaN(idx)) setIndex(idx)
   }
+
+  const displayValue = dirty ? input : selectedOption?.title || ''
 
   return (
     <div
-      className="relative font-semibold text-xs"
+      className="relative font-medium text-xs"
       ref={useOutsideClick(handleClose)}
       onClick={handleOpen}
     >
-      <label className="bg-white absolute text-xxs -top-2 left-1.5 px-1 text-neutral-500">
+      <label
+        htmlFor={inputId}
+        className="bg-white absolute text-xxs font-medium -top-2 left-2 px-1 text-neutral-600 z-10 pointer-events-none"
+      >
         {props.label}
       </label>
 
-      <Options open={open}>
+      <Options open={open} id={listboxId} listRef={listRef}>
         {options.map((option, i) => (
           <Option
+            id={`${listboxId}-opt-${i}`}
+            index={i}
             selected={option.value === props.value}
-            focused={option.value === options[index]?.value}
+            focused={i === index}
             option={option}
             key={`option-${option.value}:${i}`}
             onClick={handleClick}
@@ -145,39 +195,58 @@ export function Dropdown(props) {
         ))}
       </Options>
 
-      <input
-        ref={inputRef}
-        type="text"
-        className="border border-neutral-200 h-9 px-3 py-1 outline-none rounded-md w-full text-neutral-900"
-        placeholder={props.placeholder}
-        value={option?.title || input}
-        onChange={handleChange}
-        disabled={props.disabled}
-        onKeyDown={handleKeydown}
-        onFocus={handleOpen}
-        onClick={handleOpen}
-      />
+      <div className="relative flex items-center">
+        <input
+          id={inputId}
+          ref={inputRef}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            open && options[index] ? `${listboxId}-opt-${index}` : undefined
+          }
+          type="text"
+          className="border border-neutral-200 h-9 pl-3 pr-7 py-1 outline-none rounded-md w-full text-neutral-900 bg-white transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 truncate"
+          placeholder={props.placeholder}
+          value={displayValue}
+          onChange={handleChange}
+          disabled={props.disabled}
+          onKeyDown={handleKeydown}
+          onFocus={handleOpen}
+          onClick={handleOpen}
+        />
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={twMerge(
+            'absolute right-2.5 text-neutral-400 pointer-events-none transition-transform duration-150',
+            open && 'rotate-180 text-blue-600',
+          )}
+        />
+      </div>
     </div>
   )
 }
 
 function Options(props) {
-  props.position ||= 'above'
-
   if (!props.open) return null
 
   function handleRef(ref) {
+    if (props.listRef) props.listRef.current = ref
     if (!ref) return
 
     const boundings = ref.getBoundingClientRect()
-    const maxHeight = window.innerHeight - boundings?.top - 10
+    const maxHeight = Math.max(140, window.innerHeight - boundings?.top - 12)
     ref.style.maxHeight = `${maxHeight}px`
   }
 
   return (
     <div
+      id={props.id}
+      role="listbox"
       ref={handleRef}
-      className="absolute top-10 left-0 w-full z-30 rounded border bg-white shadow-sm overflow-scroll"
+      className="absolute top-10 left-0 w-full z-30 rounded-md border border-neutral-200 bg-white shadow-lg overflow-y-auto overflow-x-hidden"
       onMouseEnter={props.onMouseEnter}
       style={{ overscrollBehavior: 'none' }}
     >
@@ -190,7 +259,7 @@ function Option(props) {
   const ref = useRef(null)
 
   useMount(function () {
-    if (props.selected)
+    if (props.selected && ref.current)
       ref.current.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   })
 
@@ -202,20 +271,30 @@ function Option(props) {
 
   return (
     <div
+      id={props.id}
       ref={ref}
+      role="option"
+      aria-selected={props.selected}
+      aria-disabled={props.option.disabled}
       className={twMerge(
-        'flex flex-col px-2 py-1 m-1 rounded',
-        !props.selected && 'hover:bg-neutral-100',
-        props.selected && 'bg-blue-50 text-blue-900',
-        props.focused && !props.selected && 'bg-neutral-200 bg-opacity-80',
-        props.focused && props.selected && 'bg-blue-400 bg-opacity-30',
+        'flex flex-col px-2.5 py-1.5 m-1 rounded cursor-pointer transition-colors',
+        !props.selected && 'hover:bg-neutral-100 text-neutral-800',
+        props.selected && 'bg-blue-50 text-blue-900 font-semibold',
+        props.focused && !props.selected && 'bg-neutral-100',
+        props.focused && props.selected && 'bg-blue-100/80',
+        props.option.disabled && 'opacity-60 cursor-default',
       )}
       onClick={handleClick}
       data-value={props.option.value}
+      data-option-index={props.index}
       onMouseOver={props.onMouseOver}
     >
-      {props.option.title}
-      <span className="text-xxs opacity-60">{props.option.description}</span>
+      <span className="truncate">{props.option.title}</span>
+      {props.option.description && (
+        <span className="text-xxs text-neutral-500 font-normal truncate">
+          {props.option.description}
+        </span>
+      )}
     </div>
   )
 }

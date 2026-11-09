@@ -1,7 +1,7 @@
 import { CreditCard, Key } from 'react-feather'
 import { Dialog } from '../../../components/Dialog.js'
 import * as React from 'react'
-import { FreeNotice, Notice } from '../copy/Notice.jsx'
+import { FreeNotice, HowToUseTip, Notice } from '../copy/Notice.jsx'
 import { PricingTable } from '../copy/PricingTable.jsx'
 import { ApiKeyForm } from '../forms/ApiKey.js'
 import { Button } from '../../../components/Button.js'
@@ -9,13 +9,18 @@ import { useSync } from '../../../hooks/useSync.js'
 import { useSession } from '../../../hooks/useSession.js'
 import { useStore } from '../../../hooks/useStore.js'
 import { errorStore } from '../../extension.js'
+import { isError } from '../../helpers/error-helpers.js'
 
+/**
+ * First-run and missing-credentials onboarding dialog injected when a user
+ * triggers speech before configuring an API key or purchasing credits.
+ */
 export function OnboardingDialog({ onClose }) {
   const { sync, setSync, ready: syncReady } = useSync()
   const { session, ready: sessionReady } = useSession()
   const form = ApiKeyForm.Validator(onClose)
   const [loading, setLoading] = React.useState(false)
-  const [error, setError] = useStore(errorStore)
+  const [, setError] = useStore(errorStore)
 
   async function pay() {
     setLoading(true)
@@ -53,19 +58,20 @@ export function OnboardingDialog({ onClose }) {
       }
 
       return (
-        <div>
+        <div className="flex flex-col gap-3">
           <Notice />
-          <br />
           <PricingTable />
+          <HowToUseTip />
         </div>
       )
     }
 
     return (
-      <React.Fragment>
+      <div className="flex flex-col gap-3">
         <FreeNotice />
         <ApiKeyForm.Content form={form} sync={sync} setSync={setSync} />
-      </React.Fragment>
+        <HowToUseTip />
+      </div>
     )
   }
 
@@ -87,14 +93,14 @@ export function OnboardingDialog({ onClose }) {
       <Button
         className="max-w-fit"
         type="primary"
-        key="paymnet-button"
+        key="payment-button"
         Icon={CreditCard}
         onClick={pay}
         submitting={loading}
         ping={session.paymentSession}
       >
         {session.paymentSession
-          ? 'Waiting for payment'
+          ? 'Waiting for payment…'
           : 'Purchase credits ($9.75)'}
       </Button>,
     ]
@@ -108,8 +114,8 @@ export function OnboardingDialog({ onClose }) {
     <Dialog
       title={
         sync.mode === 'paid'
-          ? "You're almost there!"
-          : 'Your API key is missing or invalid'
+          ? 'Set up Wavenet to start listening'
+          : 'Connect your Google Cloud API key'
       }
       content={renderContent()}
       onClose={onClose}
