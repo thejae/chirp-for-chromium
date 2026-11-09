@@ -1,5 +1,5 @@
 import './helpers/text-helpers.js'
-import { fileExtMap } from './helpers/file-helpers.js'
+import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
 import { initializeSentry } from './helpers/sentry-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
 import { getCurrentVoice } from './helpers/voice-helpers.js'
@@ -286,6 +286,9 @@ export const handlers = {
       text = undefined
     }
 
+    // Map UI's 'PCM' alias to Google Cloud TTS's 'LINEAR16' (uncompressed 16-bit PCM WAV)
+    const apiEncoding = encoding === 'PCM' ? 'LINEAR16' : encoding
+
     try {
       const response = await loggedFetch(url, {
         method: 'POST',
@@ -298,7 +301,7 @@ export const handlers = {
           audio_pitch: sync.pitch,
           audio_speaking_rate: sync.speed,
           audio_volume_gain_db: sync.volumeGainDb,
-          audio_encoding: encoding,
+          audio_encoding: apiEncoding,
           audio_profile:
             sync.audioProfile !== 'default' ? [sync.audioProfile] : undefined,
           extension_version: chrome.runtime.getManifest().version,
@@ -367,7 +370,7 @@ export const handlers = {
 
     return (
       `data:audio/${fileExtMap[encoding]};base64,` +
-      btoa(audioContents.map(atob).join(''))
+      mergeAudioChunks(audioContents, encoding)
     )
   },
   validateApiKey: async function () {

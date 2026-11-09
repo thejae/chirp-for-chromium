@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.0] - 2026-11-09
+
+### Added
+- Added **Opus (OGG)** (`OGG_OPUS`), **Uncompressed PCM (WAV)** (`PCM`), and **WAV (Linear 16-bit)** (`LINEAR16`) options to the **Download format** dropdown (`src/extension/components/views/Preferences.tsx`) with dynamic button labels (`Download MP3`, `Download OGG`, `Download WAV`).
+- Added lossless multi-chunk RIFF/WAVE header stitching (`mergeAudioChunks` in `src/extension/helpers/file-helpers.ts`) so long multi-sentence `PCM` / `LINEAR16` downloads play continuously from start to finish.
+
+### Fixed
+- Fixed `npm run start:extension:edge` (and `npm run start:extension`) appearing stuck at `Built css` by invoking the Tailwind CLI directly via `process.execPath` instead of `npx`, correcting the `console.time` / `console.timeEnd` label mismatch in `build.js`, and printing explicit watch-mode status messages (`✅ Extension ready in ./dist` and `👀 Watching src/ for changes...`).
+
 ## [13.3.0] - 2026-11-09
 
 ### Added

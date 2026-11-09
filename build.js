@@ -33,7 +33,8 @@ const PRODUCTION_ENVIRONMENT_VARIABLES = {
 
 const DEVELOPMENT_ENVIRONMENT_VARIABLES = {
   ENVIRONMENT: 'development',
-  BACKEND_URL: 'http://localhost:4000/v1',
+  BACKEND_URL:
+    process.env.BACKEND_URL || 'https://api.wavenet-for-chrome.com/v1',
 }
 
 const ENVIRONMENT_VARIABLES =
@@ -57,8 +58,16 @@ mkdirSync('dist', { recursive: true })
 
 // If we're in development, watch the src folder for changes and rebuild
 if (environment === 'development') {
-  build()
-  watch('src', { recursive: true }, build)
+  await build()
+  console.log(
+    '✅ Extension ready in ./dist — load unpacked in edge://extensions or chrome://extensions',
+  )
+  console.log('👀 Watching src/ for changes (press Ctrl+C to stop)...\n')
+  let rebuildTimer = null
+  watch('src', { recursive: true }, () => {
+    if (rebuildTimer) clearTimeout(rebuildTimer)
+    rebuildTimer = setTimeout(() => build(), 150)
+  })
 }
 
 // If we're in production, build the extension and zip it up in the releases folder
@@ -76,7 +85,7 @@ if (environment === 'production') {
 
 // functions --------------------------------------------------------------
 async function build() {
-  console.time('✅ Built extension\n')
+  console.time('✅ Built extension')
 
   const output = await Bun.build({
     entrypoints: [
@@ -105,7 +114,7 @@ async function build() {
 
   console.time('ℹ️ Built css')
   execSync(
-    'npx tailwindcss -i ./src/extension/public/styles.css -o ./dist/public/styles.css',
+    `"${process.execPath}" ./node_modules/tailwindcss/lib/cli.js -i ./src/extension/public/styles.css -o ./dist/public/styles.css`,
   )
   console.timeEnd('ℹ️ Built css')
   console.timeEnd('✅ Built extension')

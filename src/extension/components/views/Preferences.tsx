@@ -19,17 +19,33 @@ import {
   getLanguageOptions,
   getVoiceOptions,
 } from '../../helpers/voice-helpers.js'
+import { fileExtMap } from '../../helpers/file-helpers.js'
 
 const downloadAudioFormats = [
   {
     value: 'MP3_64_KBPS',
     title: 'MP3 (64 kbps)',
-    description: 'Recommended · High quality',
+    description: 'Recommended · High quality MP3',
   },
   {
     value: 'MP3',
     title: 'MP3 (32 kbps)',
     description: 'Smaller file size',
+  },
+  {
+    value: 'OGG_OPUS',
+    title: 'Opus (OGG)',
+    description: 'High quality · Efficient compression',
+  },
+  {
+    value: 'PCM',
+    title: 'Uncompressed PCM (WAV)',
+    description: 'Lossless 16-bit Linear PCM audio',
+  },
+  {
+    value: 'LINEAR16',
+    title: 'WAV (Linear 16-bit)',
+    description: 'Lossless 16-bit WAV audio',
   },
 ]
 
@@ -40,9 +56,14 @@ const readingAudioFormats = [
     description: 'Recommended · Lowest latency',
   },
   {
+    value: 'PCM',
+    title: 'Uncompressed PCM (WAV)',
+    description: 'Lossless 16-bit Linear PCM audio',
+  },
+  {
     value: 'LINEAR16',
-    title: 'WAV (Uncompressed)',
-    description: 'Lossless PCM audio',
+    title: 'WAV (Linear 16-bit)',
+    description: 'Lossless 16-bit WAV audio',
   },
   {
     value: 'MP3_64_KBPS',
@@ -139,6 +160,9 @@ export function Preferences() {
   const selectedVoiceOption = voiceOptions.find((v) => v.value === voice)
   const isMac = navigator.platform?.toUpperCase().includes('MAC')
   const isPlaying = Boolean(session?.playing)
+  const downloadFormatExt = (
+    fileExtMap[sync.downloadEncoding] || 'mp3'
+  ).toUpperCase()
 
   async function handleReadAloudSelection() {
     if (isPlaying) {
@@ -375,7 +399,7 @@ export function Preferences() {
               submitting={downloadingSelection}
               onClick={handleDownloadSelection}
             >
-              Download MP3
+              Download {downloadFormatExt}
             </Button>
           </div>
           <div className="flex items-center justify-between gap-3 pt-2 border-t border-neutral-100">
@@ -390,7 +414,7 @@ export function Preferences() {
               </div>
               <div>
                 <span className="font-medium text-neutral-800">
-                  Download MP3 shortcut:
+                  Download {downloadFormatExt} shortcut:
                 </span>{' '}
                 <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded font-mono">
                   {isMac ? '⌘+Shift+E' : 'Ctrl+Shift+E'}
