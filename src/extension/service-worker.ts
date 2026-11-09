@@ -3,6 +3,7 @@ import { fileExtMap } from './helpers/file-helpers.js'
 import { initializeSentry } from './helpers/sentry-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
 import { getCurrentVoice } from './helpers/voice-helpers.js'
+import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
 
 // Local state -----------------------------------------------------------------
 let queue = []
@@ -15,16 +16,27 @@ const bootstrapped = new Promise((resolve) => (bootstrappedResolver = resolve))
 initializeSentry()
 ;(async function Bootstrap() {
   await setDefaultSettings()
-  await handlers.fetchVoices()
-  await handlers.fetchUser()
+  await appendLog('INFO', 'Service worker bootstrapping…')
+  try {
+    await handlers.fetchVoices()
+  } catch (e: any) {
+    await appendLog('WARN', 'Initial voice fetch failed during bootstrap', e?.message)
+  }
+  try {
+    await handlers.fetchUser()
+  } catch (e: any) {
+    await appendLog('WARN', 'Initial user fetch failed during bootstrap', e?.message)
+  }
   await createContextMenus()
   bootstrappedResolver()
+  await appendLog('INFO', 'Service worker bootstrap complete')
   await pollForPayment()
 })()
 
 // Event listeners -------------------------------------------------------------
 chrome.commands.onCommand.addListener(function (command) {
   console.log('Handling command...', command)
+  appendLog('INFO', `Keyboard shortcut triggered: ${command}`)
 
   if (!handlers[command]) throw new Error(`No handler found for ${command}`)
 
@@ -34,9 +46,13 @@ chrome.commands.onCommand.addListener(function (command) {
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   console.log('Handling message...', request, sender, sendResponse)
 
-  const { id, payload } = request
+  const { id, payload, offscreen } = request
+  if (offscreen) return
 
   if (!handlers[id]) throw new Error(`No handler found for ${id}`)
+  if (id !== 'clearLogs') {
+    appendLog('INFO', `Runtime message received: ${id}`, payload)
+  }
   handlers[id](payload).then(sendResponse)
 
   return true
@@ -59,6 +75,9 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
 
   const id = info.menuItemId
   const payload = { text: info.selectionText }
+  appendLog('INFO', `Context menu clicked: ${String(id)}`, {
+    selectionLength: info.selectionText?.length || 0,
+  })
 
   if (!handlers[id]) throw new Error(`No handler found for ${id}`)
 
@@ -91,6 +110,10 @@ chrome.runtime.onInstalled.addListener(async function (details) {
 
 // Handlers --------------------------------------------------------------------
 export const handlers = {
+  clearLogs: async function () {
+    await clearLogs()
+    return true
+  },
   readAloud: async function ({ text }) {
     console.log('Reading aloud...', { text })
 
@@ -98,6 +121,11 @@ export const handlers = {
 
     const chunks = text.chunk()
     console.log('Chunked text into', chunks.length, 'chunks', chunks)
+    await appendLog(
+      'INFO',
+      `Reading aloud (${text.length} chars in ${chunks.length} chunk${chunks.length === 1 ? '' : 's'})`,
+      { chunks },
+    )
 
     queue.push(...chunks)
     playing = true
@@ -129,16 +157,24 @@ export const handlers = {
           : await prefetchQueue.shift()
 
       try {
-        if (isError(audioUri)) return audioUri
+        if (isError(audioUri)) {
+          playing = false
+          updateContextMenus()
+          return audioUri
+        }
 
         await createOffscreenDocument()
+        await appendLog('INFO', `Playing audio chunk ${count + 1}`)
         await chrome.runtime.sendMessage({
           id: 'play',
           payload: { audioUri },
           offscreen: true,
         })
-      } catch (e) {
+      } catch (e: any) {
         console.warn('Failed to play audio', e)
+        await appendLog('WARN', 'Audio playback interrupted or failed', e?.message)
+        playing = false
+        updateContextMenus()
 
         // Audio playback may have failed because the user stopped playback, or
         // called the readAloud function again. We need to return early to avoid
@@ -152,28 +188,25 @@ export const handlers = {
 
     playing = false
     updateContextMenus()
+    await appendLog('INFO', 'Finished reading aloud all chunks')
     return Promise.resolve(true)
   },
   readAloudShortcut: async function () {
     console.log('Handling read aloud shortcut...')
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    const result = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: retrieveSelection,
-    })
-    const text = result[0].result
-
     if (playing) {
       await this.stopReading()
-
-      if (!text) return
+      return true
     }
 
-    this.readAloud({ text })
+    const selection = await getActiveTabSelection()
+    if (isError(selection)) return selection
+
+    return this.readAloud({ text: selection })
   },
   stopReading: async function () {
     console.log('Stopping reading...')
+    await appendLog('INFO', 'Stopping audio playback')
 
     cancellationToken = true
     queue = []
@@ -194,6 +227,7 @@ export const handlers = {
   },
   download: async function ({ text }) {
     console.log('Downloading audio...', { text })
+    await appendLog('INFO', `Preparing audio download (${text?.length || 0} chars)`)
 
     const { downloadEncoding: encoding } = await chrome.storage.sync.get()
 
@@ -201,10 +235,12 @@ export const handlers = {
     if (isError(url)) return url
 
     console.log('Downloading audio from', url)
+    const filename = `tts-download.${fileExtMap[encoding]}`
+    await appendLog('INFO', `Triggering browser download: ${filename}`)
 
     chrome.downloads.download({
       url,
-      filename: `tts-download.${fileExtMap[encoding]}`,
+      filename,
     })
 
     return Promise.resolve(true)
@@ -212,14 +248,10 @@ export const handlers = {
   downloadShortcut: async function () {
     console.log('Handling download shortcut...')
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    const result = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: retrieveSelection,
-    })
-    const text = result[0].result
+    const selection = await getActiveTabSelection()
+    if (isError(selection)) return selection
 
-    this.download({ text })
+    return this.download({ text: selection })
   },
   synthesize: async function ({ text, encoding }) {
     console.log('Synthesizing text...', { text, encoding })
@@ -242,6 +274,7 @@ export const handlers = {
           "Your api key is invalid or missing. Please double check it has been entered correctly inside the extension's popup.",
       })
 
+      await appendLog('ERROR', 'Synthesis aborted: Missing API key or credentials')
       sendMessageToCurrentTab(error)
 
       return error
@@ -254,7 +287,7 @@ export const handlers = {
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await loggedFetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -342,7 +375,7 @@ export const handlers = {
     const sync = await chrome.storage.sync.get()
 
     try {
-      const response = await fetch(
+      const response = await loggedFetch(
         `${process.env.TTS_API_URL}/voices?key=${sync.apiKey}`,
       )
       return response.ok
@@ -353,7 +386,7 @@ export const handlers = {
   fetchVoices: async function () {
     console.log('Fetching voices...')
 
-    const response = await fetch(`${process.env.BACKEND_URL}/voices`)
+    const response = await loggedFetch(`${process.env.BACKEND_URL}/voices`)
     if (!response.ok) throw new Error('Failed to fetch voices')
 
     const voices = await response.json()
@@ -367,25 +400,30 @@ export const handlers = {
   // ---------------------------------------------------------------------------
   authenticate: async function () {
     console.log('Authenticating...')
-    const authTokenResult = await chrome.identity.getAuthToken({
-      interactive: true,
-    })
+    await appendLog('INFO', 'Starting Google OAuth authentication')
 
     try {
-      const userResult = await fetch(`${process.env.BACKEND_URL}/users`, {
+      const token = await getOAuthToken()
+      const userResult = await loggedFetch(`${process.env.BACKEND_URL}/users`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${authTokenResult.token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
 
+      if (!userResult.ok) {
+        throw new Error('Failed to authenticate user with backend')
+      }
+
       const user = await userResult.json()
 
       await chrome.storage.sync.set({ user })
+      await appendLog('INFO', 'User authenticated successfully')
 
       return user
-    } catch (e) {
+    } catch (e: any) {
+      await appendLog('ERROR', 'Authentication failed', e?.message)
       const error = createError({
         errorCode: 'AUTHENTICATION_FAILED',
         errorTitle: 'Authentication failed',
@@ -400,6 +438,7 @@ export const handlers = {
 
     // Authenticate the user first
     const user = await this.authenticate()
+    if (isError(user)) return user
     if (!user) {
       throw new Error('Failed to authenticate user')
     }
@@ -413,7 +452,7 @@ export const handlers = {
     const session = await chrome.storage.session.get()
     if (session.paymentSession) return session.paymentSession
 
-    const response = await fetch(
+    const response = await loggedFetch(
       `${process.env.BACKEND_URL}/payment-sessions`,
       {
         method: 'POST',
@@ -448,7 +487,7 @@ export const handlers = {
     const sync = await chrome.storage.sync.get()
     if (!sync.user?.secret_key) return
 
-    const response = await fetch(`${process.env.BACKEND_URL}/users`, {
+    const response = await loggedFetch(`${process.env.BACKEND_URL}/users`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${sync.user.secret_key}` },
     })
@@ -465,7 +504,7 @@ export const handlers = {
     const sync = await chrome.storage.sync.get()
     if (!sync.user?.secret_key) return
 
-    const response = await fetch(`${process.env.BACKEND_URL}/insights`, {
+    const response = await loggedFetch(`${process.env.BACKEND_URL}/insights`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${sync.user.secret_key}` },
     })
@@ -482,7 +521,7 @@ export const handlers = {
     const sync = await chrome.storage.sync.get()
     if (!sync.user?.secret_key) return
 
-    const response = await fetch(`${process.env.BACKEND_URL}/invoices`, {
+    const response = await loggedFetch(`${process.env.BACKEND_URL}/invoices`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${sync.user.secret_key}` },
     })
@@ -494,8 +533,59 @@ export const handlers = {
 }
 
 // Helpers ---------------------------------------------------------------------
+async function getActiveTabSelection() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab?.id || tab.url?.startsWith('chrome://') || tab.url?.startsWith('edge://')) {
+      const err = createError({
+        errorCode: 'UNSUPPORTED_TAB',
+        errorTitle: 'Cannot read selection on browser settings pages',
+        errorMessage:
+          'Switch to a regular webpage and highlight text first, or use the Sandbox tab to enter custom text.',
+      })
+      await appendLog('WARN', 'Cannot read selection on restricted browser tab', {
+        url: tab?.url,
+      })
+      return err
+    }
+
+    const result = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: retrieveSelection,
+    })
+    const text = result?.[0]?.result?.trim()
+
+    if (!text) {
+      const err = createError({
+        errorCode: 'NO_TEXT_SELECTED',
+        errorTitle: 'No text highlighted on the active page',
+        errorMessage:
+          'Highlight the text you want to synthesize on the webpage first, or use the Sandbox tab to type custom text.',
+      })
+      await appendLog('WARN', 'No text highlighted on the active tab', {
+        url: tab.url,
+      })
+      return err
+    }
+
+    await appendLog('INFO', `Retrieved ${text.length} selected characters from active tab`, {
+      preview: text.length > 100 ? `${text.slice(0, 100)}…` : text,
+    })
+    return text
+  } catch (e: any) {
+    await appendLog('ERROR', 'Failed to retrieve selection from active tab', e?.message)
+    return createError({
+      errorCode: 'SELECTION_FAILED',
+      errorTitle: 'Could not read highlighted text on this page',
+      errorMessage:
+        'Refresh the webpage and try again, or paste the text into the Sandbox tab.',
+    })
+  }
+}
+
 async function updateContextMenus() {
   console.log('Updating context menus...', { playing })
+  await chrome.storage.session.set({ playing })
 
   // Prevents context menus from being updated before they are created,
   // which causes an unnecessary error in the console.
@@ -576,10 +666,77 @@ async function createOffscreenDocument() {
   }
 }
 
+/**
+ * Obtains a Google OAuth2 access token.
+ *
+ * Attempts Chrome's native `chrome.identity.getAuthToken` first, and falls back
+ * to `chrome.identity.launchWebAuthFlow` on Microsoft Edge and other Chromium
+ * browsers where `getAuthToken` is unsupported.
+ */
+async function getOAuthToken(): Promise<string> {
+  if (!navigator.userAgent.includes('Edg/') && chrome.identity?.getAuthToken) {
+    try {
+      const authTokenResult = await chrome.identity.getAuthToken({
+        interactive: true,
+      })
+      if (authTokenResult?.token) return authTokenResult.token
+    } catch (e) {
+      console.warn(
+        'chrome.identity.getAuthToken failed, falling back to launchWebAuthFlow',
+        e,
+      )
+    }
+  }
+
+  const redirectUri = chrome.identity.getRedirectURL()
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+  authUrl.searchParams.set('client_id', process.env.GOOGLE_OAUTH2_CLIENT_ID)
+  authUrl.searchParams.set('response_type', 'token')
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set(
+    'scope',
+    'https://www.googleapis.com/auth/userinfo.email',
+  )
+
+  const responseUrl = await chrome.identity.launchWebAuthFlow({
+    url: authUrl.toString(),
+    interactive: true,
+  })
+
+  if (!responseUrl) {
+    throw new Error('No response URL returned from launchWebAuthFlow')
+  }
+
+  const hash = new URL(responseUrl).hash.substring(1)
+  const params = new URLSearchParams(hash)
+  const token = params.get('access_token')
+
+  if (!token) {
+    throw new Error('No access_token present in OAuth redirect URL')
+  }
+
+  return token
+}
+
+/**
+ * Checks whether an offscreen document at the given path is already active.
+ * Uses `chrome.runtime.getContexts` (Chromium 116+ / Edge) with a fallback to
+ * ServiceWorker `clients.matchAll()`.
+ */
 async function hasOffscreenDocument(path) {
   console.log('Checking if offscreen document exists...')
 
   const offscreenUrl = chrome.runtime.getURL(path)
+
+  if ('getContexts' in chrome.runtime) {
+    // @ts-ignore - chrome.runtime.getContexts added in MV3 (Chromium 116+)
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [offscreenUrl],
+    })
+    return contexts.length > 0
+  }
+
   // @ts-ignore
   const matchedClients = await clients.matchAll()
 

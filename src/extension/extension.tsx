@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useSync } from '../hooks/useSync'
-import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useMount } from '../hooks/useMount'
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
 import { Billing } from './components/views/Billing'
 import { Usage } from './components/views/Usage'
 import { Preferences } from './components/views/Preferences'
 import { Sandbox } from './components/views/Sandbox'
+import { Logs } from './components/views/Logs'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
 import { GitHub } from 'react-feather'
@@ -16,38 +16,50 @@ import { createStore, useStore } from '../hooks/useStore'
 
 export const errorStore = createStore<null | TError>(null)
 
+/**
+ * Root popup container for the extension.
+ * Opens the "Voice & speech" (`/preferences`) tab by default on launch
+ * and renders the global error dialog when runtime errors occur.
+ */
 export function Extension() {
   const navigate = useNavigate()
   const { ready } = useSync()
-  const [route, setRoute] = useLocalStorage('route', '/billing')
   const [error, setError] = useStore(errorStore)
-  const location = useLocation()
-  useEffect(() => setRoute(location), [location])
 
   useMount(() => {
-    // This is required as extensions load the route as `/popup.html` by default
-    navigate(route)
+    // Default to the Voice & speech tab whenever the popup opens
+    navigate('/preferences')
 
     // Fetch voices in-case the session has become invalid
     chrome.runtime.sendMessage({ id: 'fetchVoices' })
   })
 
-  if (!ready) return null
+  if (!ready) {
+    return (
+      <div
+        style={{ width: 586, height: 550 }}
+        className="bg-neutral-50 flex items-center justify-center text-xs text-neutral-500"
+      >
+        Loading extension…
+      </div>
+    )
+  }
 
   return (
     <div
       style={{ width: 586, height: 550 }}
-      className="bg-neutral-50 bg-opacity-50 flex"
+      className="bg-neutral-50 flex text-neutral-800"
     >
       <Sidebar />
-      <div className="w-full p-4 overflow-y-scroll bg-neutral-100 bg-opacity-60">
+      <main className="w-full p-4 overflow-y-auto bg-neutral-100/60">
         <Routes>
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/usage" element={<Usage />} />
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/sandbox" element={<Sandbox />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/usage" element={<Usage />} />
+          <Route path="/logs" element={<Logs />} />
         </Routes>
-      </div>
+      </main>
       {error && (
         <Dialog
           title={error.errorTitle}
@@ -55,20 +67,20 @@ export function Extension() {
           onClose={() => setError(null)}
           buttons={[
             <Button
-              key="close-button"
-              className="max-w-fit"
-              onClick={() => setError(null)}
-            >
-              Close
-            </Button>,
-            <Button
               key="create-issue-button"
               className="max-w-fit"
-              type="primary"
               Icon={GitHub}
               onClick={() => createGithubIssueFromError(error)}
             >
-              Create an issue
+              Report issue
+            </Button>,
+            <Button
+              key="close-button"
+              className="max-w-fit"
+              type="primary"
+              onClick={() => setError(null)}
+            >
+              Close
             </Button>,
           ]}
         />
