@@ -13,7 +13,7 @@ const isEdgeStoreBuild = isEdge && process.env.ENVIRONMENT === 'production'
  *   it in local development preserves the extension ID for OAuth redirect URIs.
  */
 export default {
-  name: 'Wavenet for Chrome',
+  name: 'Chirp3 for Chromium',
   description:
     'Transforms highlighted text into high-quality natural sounding audio using Google Cloud Text-to-Speech.',
   version: process.env.npm_package_version,
@@ -62,7 +62,7 @@ export default {
     },
   ],
   action: {
-    default_title: 'Wavenet for Chrome',
+    default_title: 'Chirp3 for Chromium',
     default_popup: 'public/popup.html',
     default_icon: {
       16: 'public/images/icon_16.png',
@@ -85,5 +85,5 @@ export default {
       matches: ['<all_urls>'],
     },
   ],
-  homepage_url: 'https://github.com/pgmichael/wavenet-for-chrome',
+  homepage_url: 'https://github.com/thejae/chirp-for-chromium',
 }

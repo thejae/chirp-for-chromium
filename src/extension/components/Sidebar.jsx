@@ -35,16 +35,16 @@ export function Sidebar() {
       <div className="flex items-center mb-3.5 px-2 pt-0.5">
         <img
           src="../../public/images/icon_128.png"
-          alt="Wavenet icon"
+          alt="Chirp3 for Chromium icon"
           className="mr-2 shrink-0"
           style={{ width: '24px', height: '24px' }}
         />
         <div className="leading-tight text-left">
           <div className="text-sm font-bold text-neutral-900 tracking-tight">
-            Wavenet
+            Chirp3
           </div>
           <div className="text-xxs font-medium text-neutral-500 -mt-0.5">
-            Text-to-Speech
+            for Chromium
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@ export function Sidebar() {
         <Sidebar.Item
           Icon={GitHub}
           color="bg-neutral-700"
-          to="https://github.com/pgmichael/wavenet-for-chrome"
+          to="https://github.com/thejae/chirp-for-chromium"
         >
           Contribute
         </Sidebar.Item>

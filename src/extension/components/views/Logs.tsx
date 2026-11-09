@@ -42,7 +42,7 @@ export function Logs() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `wavenet-extension-log-${new Date()
+    link.download = `chirp3-for-chromium-log-${new Date()
       .toISOString()
       .replace(/[:.]/g, '-')}.txt`
     document.body.appendChild(link)

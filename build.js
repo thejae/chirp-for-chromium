@@ -72,7 +72,7 @@ if (environment === 'development') {
 
 // If we're in production, build the extension and zip it up in the releases folder
 if (environment === 'production') {
-  const releaseName = `wavenet-for-${browser}-${process.env.npm_package_version}`
+  const releaseName = `chirp3-for-${browser}-${process.env.npm_package_version}`
   await build()
 
   console.time(`✅ Zipped up release ${releaseName}`)

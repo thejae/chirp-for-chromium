@@ -1,6 +1,6 @@
-# Wavenet for Chrome
+# Chirp3 for Chromium
 
-[Chrome extension](https://chrome.google.com/webstore/detail/wavenet-for-chrome/iefankigbnlnlaolflbcopliocibkffc?hl=en) that transforms highlighted text into high-quality natural sounding audio using [Google Cloud's Text-to-Speech](https://cloud.google.com/text-to-speech).
+[Chromium extension](https://github.com/thejae/chirp-for-chromium) (for Google Chrome, Microsoft Edge, and Chromium browsers) that transforms highlighted text into high-quality natural sounding audio using [Google Cloud's Text-to-Speech](https://cloud.google.com/text-to-speech).
 
 ## Features
 

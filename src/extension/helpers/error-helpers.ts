@@ -46,7 +46,7 @@ Provide any additional context about the error, such as what you were doing when
     `
 
   window.open(
-    `https://github.com/pgmichael/wavenet-for-chrome/issues/new?title=${encodeURIComponent(
+    `https://github.com/thejae/chirp-for-chromium/issues/new?title=${encodeURIComponent(
       error.errorTitle,
     )}&body=${encodeURIComponent(issueBody)}`,
   )

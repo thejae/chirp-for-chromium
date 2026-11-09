@@ -114,7 +114,7 @@ export function OnboardingDialog({ onClose }) {
     <Dialog
       title={
         sync.mode === 'paid'
-          ? 'Set up Wavenet to start listening'
+          ? 'Set up Chirp3 for Chromium to start listening'
           : 'Connect your Google Cloud API key'
       }
       content={renderContent()}
