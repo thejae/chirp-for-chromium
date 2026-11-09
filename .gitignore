@@ -4,6 +4,10 @@ node_modules/
 # Distribution / build output
 dist/
 dist-website/
+releases/*.zip
+
+# Tooling & scratch directories
+.impeccable/
 
 # IDE specific files
 .idea/
