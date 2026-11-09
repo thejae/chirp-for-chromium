@@ -56,34 +56,14 @@ export function Logs() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-3">
-      <div className="flex items-center justify-between ml-0.5">
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-800 tracking-tight">
-            Extension & API Log
-          </h2>
-          <p className="text-xxs text-neutral-500">
-            Verbose runtime events and redacted API request/response activity
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button
-            className="w-fit py-1.5 px-2.5"
-            Icon={Download}
-            disabled={!logs.length}
-            onClick={handleExportLogs}
-          >
-            Export log
-          </Button>
-          <Button
-            className="w-fit py-1.5 px-2.5"
-            Icon={Trash2}
-            disabled={!logs.length}
-            onClick={handleClearLogs}
-          >
-            Clear
-          </Button>
-        </div>
+    <div className="h-full flex flex-col gap-2.5">
+      <div className="ml-0.5">
+        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight">
+          Extension & API Log
+        </h2>
+        <p className="text-xxs text-neutral-500">
+          Verbose runtime events and redacted API request/response activity
+        </p>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col grow overflow-y-auto font-mono text-xxs divide-y divide-neutral-100">
@@ -96,6 +76,13 @@ export function Logs() {
           [...logs].reverse().map((entry) => {
             const timePart =
               entry.timestamp.split('T')[1]?.replace('Z', '') || entry.timestamp
+            const isResponse = entry.message.startsWith('←')
+            const isRequest = entry.message.startsWith('→')
+            const summaryLabel = isResponse
+              ? 'Response body'
+              : isRequest
+              ? 'Request body'
+              : 'Details'
             return (
               <div
                 key={entry.id}
@@ -118,14 +105,38 @@ export function Logs() {
                   </span>
                 </div>
                 {entry.details && (
-                  <pre className="mt-0.5 p-2 rounded bg-neutral-50 border border-neutral-200/70 text-neutral-600 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
-                    {entry.details}
-                  </pre>
+                  <details className="mt-0.5">
+                    <summary className="cursor-pointer select-none font-sans text-[11px] font-medium text-neutral-500 hover:text-neutral-800 w-fit">
+                      {summaryLabel}
+                    </summary>
+                    <pre className="mt-1 p-2 rounded bg-neutral-50 border border-neutral-200/70 text-neutral-600 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+                      {entry.details}
+                    </pre>
+                  </details>
                 )}
               </div>
             )
           })
         )}
+      </div>
+
+      <div className="flex items-center justify-end gap-1.5 shrink-0">
+        <Button
+          className="w-fit py-1.5 px-2.5"
+          Icon={Download}
+          disabled={!logs.length}
+          onClick={handleExportLogs}
+        >
+          Export log
+        </Button>
+        <Button
+          className="w-fit py-1.5 px-2.5"
+          Icon={Trash2}
+          disabled={!logs.length}
+          onClick={handleClearLogs}
+        >
+          Clear
+        </Button>
       </div>
     </div>
   )

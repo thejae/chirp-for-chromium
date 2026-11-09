@@ -286,8 +286,14 @@ export const handlers = {
       text = undefined
     }
 
-    // Map UI's 'PCM' alias to Google Cloud TTS's 'LINEAR16' (uncompressed 16-bit PCM WAV)
-    const apiEncoding = encoding === 'PCM' ? 'LINEAR16' : encoding
+    // Normalize UI encoding aliases to encodings supported across all Google Cloud TTS voices
+    // (Chirp/Journey/Studio voices reject legacy MP3_64_KBPS and require MP3, OGG_OPUS, or LINEAR16).
+    const apiEncoding =
+      encoding === 'PCM'
+        ? 'LINEAR16'
+        : encoding === 'MP3_64_KBPS'
+        ? 'MP3'
+        : encoding
 
     try {
       const response = await loggedFetch(url, {
@@ -764,8 +770,14 @@ async function setDefaultSettings() {
     speed: sync.speed || 1,
     pitch: sync.pitch || 0,
     voices: sync.voices || { 'en-US': 'en-US-Polyglot-1' },
-    readAloudEncoding: sync.readAloudEncoding || 'OGG_OPUS',
-    downloadEncoding: sync.downloadEncoding || 'MP3_64_KBPS',
+    readAloudEncoding:
+      !sync.readAloudEncoding || sync.readAloudEncoding === 'MP3_64_KBPS'
+        ? 'OGG_OPUS'
+        : sync.readAloudEncoding,
+    downloadEncoding:
+      !sync.downloadEncoding || sync.downloadEncoding === 'MP3_64_KBPS'
+        ? 'MP3'
+        : sync.downloadEncoding,
     apiKey: sync.apiKey || '',
     audioProfile: sync.audioProfile || 'default',
     volumeGainDb: sync.volumeGainDb || 0,

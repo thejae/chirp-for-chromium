@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.1] - 2026-11-09
+
+### Changed
+- Made request/response bodies and details in the **Log** view (`src/extension/components/views/Logs.tsx`) collapsible via native `<details>` disclosures (collapsed by default) and moved **Export log** and **Clear** buttons to the bottom right.
+
+### Fixed
+- Fixed audio download failing on Chirp/Journey/Studio voices with `"This voice currently only supports the following audio encodings: LINEAR16, MP3, OGG_OPUS, MULAW, ALAW"` by normalizing legacy `MP3_64_KBPS` to standard `MP3` in `src/extension/service-worker.ts` and `src/extension/components/views/Preferences.tsx`.
+
 ## [13.4.0] - 2026-11-09
 
 ### Added

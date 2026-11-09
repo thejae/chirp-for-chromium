@@ -23,14 +23,9 @@ import { fileExtMap } from '../../helpers/file-helpers.js'
 
 const downloadAudioFormats = [
   {
-    value: 'MP3_64_KBPS',
-    title: 'MP3 (64 kbps)',
-    description: 'Recommended · High quality MP3',
-  },
-  {
     value: 'MP3',
-    title: 'MP3 (32 kbps)',
-    description: 'Smaller file size',
+    title: 'MP3',
+    description: 'Recommended · Universal compressed audio',
   },
   {
     value: 'OGG_OPUS',
@@ -56,6 +51,11 @@ const readingAudioFormats = [
     description: 'Recommended · Lowest latency',
   },
   {
+    value: 'MP3',
+    title: 'MP3',
+    description: 'Standard compressed audio',
+  },
+  {
     value: 'PCM',
     title: 'Uncompressed PCM (WAV)',
     description: 'Lossless 16-bit Linear PCM audio',
@@ -64,16 +64,6 @@ const readingAudioFormats = [
     value: 'LINEAR16',
     title: 'WAV (Linear 16-bit)',
     description: 'Lossless 16-bit WAV audio',
-  },
-  {
-    value: 'MP3_64_KBPS',
-    title: 'MP3 (64 kbps)',
-    description: 'Standard compressed',
-  },
-  {
-    value: 'MP3',
-    title: 'MP3 (32 kbps)',
-    description: 'Low bandwidth',
   },
 ]
 
@@ -350,7 +340,11 @@ export function Preferences() {
             <div className="grid gap-3 grid-cols-2 pt-2 border-t border-neutral-100">
               <Dropdown
                 label="Download format"
-                value={sync.downloadEncoding}
+                value={
+                  sync.downloadEncoding === 'MP3_64_KBPS'
+                    ? 'MP3'
+                    : sync.downloadEncoding
+                }
                 options={downloadAudioFormats}
                 onChange={(downloadEncoding) => {
                   if (
@@ -364,7 +358,11 @@ export function Preferences() {
               />
               <Dropdown
                 label="Streaming format"
-                value={sync.readAloudEncoding}
+                value={
+                  sync.readAloudEncoding === 'MP3_64_KBPS'
+                    ? 'MP3'
+                    : sync.readAloudEncoding
+                }
                 options={readingAudioFormats}
                 onChange={(readAloudEncoding) => {
                   if (

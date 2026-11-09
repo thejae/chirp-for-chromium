@@ -135,7 +135,10 @@ export async function loggedFetch(
           audioContent: `[base64 audio, ${String(json.audioContent).length} chars]`,
         }
       } else if (Array.isArray(json)) {
-        responsePreview = `[Array(${json.length})]`
+        responsePreview = {
+          count: json.length,
+          sample: json.slice(0, 15),
+        }
       } else {
         responsePreview = json
       }
