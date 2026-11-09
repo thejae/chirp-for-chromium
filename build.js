@@ -1,10 +1,19 @@
 import { execSync } from 'child_process'
-import { mkdirSync, rmSync, watch, writeFileSync } from 'fs'
+import { mkdirSync, readFileSync, rmSync, watch, writeFileSync } from 'fs'
 
-// Get arguments from the command line
-const args = process.argv.slice(2)
-const environment = args[0].split('=')[1]
-console.log(`🛠️  Building for ${environment} environment\n`)
+/**
+ * Parse CLI flags (`--environment=development|production`, `--browser=chrome|edge`).
+ */
+const args = Object.fromEntries(
+  process.argv.slice(2).map((arg) => arg.replace(/^--/, '').split('=')),
+)
+const environment = args.environment || 'development'
+const browser = args.browser || 'chrome'
+const packageVersion =
+  process.env.npm_package_version ||
+  JSON.parse(readFileSync('./package.json', 'utf8')).version
+
+console.log(`🛠️  Building for ${environment} environment (${browser})\n`)
 
 // Setup environment variables for the frontend in development
 const SHARED_ENVIRONMENT_VARIABLES = {
@@ -13,6 +22,8 @@ const SHARED_ENVIRONMENT_VARIABLES = {
     '89959520704-p0jas87qkq9u8tmjs0d0c6sopiajl0kl.apps.googleusercontent.com',
   GOOGLE_CHROME_EXTENSION_KEY:
     'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv8jZ7956T275KyNvf6hU4JqqEb4e2sWrJXtZh2k2wR/3t36QLA+BmI3vCOxrdK8wlCmF1vs+I0NgzeYlIE27QEIjYen8s6wBM8jHAicGqSu/N9WFbJ1W3e2I5t4RmMpZXw4YtDplof6Niy7mcFoCwKuUKxkH14WjOLSn+eQSsV2QoFePua0qGypmxCsoZ0nJleshRPd/5y52/xJTTlQ3USgQZuwc37nTzxEI34XXlV/N3lrJtJFJ6uLFqgU8FNFBozsrmTcrVnieLBSsMpqG8+EpKbeJoEK02xr6N4YOhXBFqSQ6jXJ5+E7PQNJmenOwa8w2VSIMVXtnOG0XFPfQtwIDAQAB',
+  BROWSER: browser,
+  npm_package_version: packageVersion,
 }
 
 const PRODUCTION_ENVIRONMENT_VARIABLES = {
@@ -52,12 +63,13 @@ if (environment === 'development') {
 
 // If we're in production, build the extension and zip it up in the releases folder
 if (environment === 'production') {
-  const releaseName = `wavenet-for-chrome-${process.env.npm_package_version}`
+  const releaseName = `wavenet-for-${browser}-${process.env.npm_package_version}`
   await build()
 
   console.time(`✅ Zipped up release ${releaseName}`)
+  mkdirSync('releases', { recursive: true })
   execSync(
-    `rm -f releases/${releaseName}.zip && zip -r releases/${releaseName}.zip dist`,
+    `rm -f releases/${releaseName}.zip && (command -v zip >/dev/null 2>&1 && zip -r releases/${releaseName}.zip dist || python3 -m zipfile -c releases/${releaseName}.zip dist)`,
   )
   console.timeEnd(`✅ Zipped up release ${releaseName}`)
 }
