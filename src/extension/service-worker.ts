@@ -118,8 +118,8 @@ export const handlers = {
     await clearLogs()
     return true
   },
-  readAloud: async function ({ text }) {
-    console.log('Reading aloud...', { text })
+  readAloud: async function ({ text, highlight = true }) {
+    console.log('Reading aloud...', { text, highlight })
 
     if (playing) await this.stopReading()
 
@@ -138,7 +138,8 @@ export const handlers = {
     let count = 0
     const sync = await chrome.storage.sync.get()
     const encoding = sync.readAloudEncoding
-    highlightingEnabled = sync.highlightSpokenWords !== false
+    highlightingEnabled =
+      highlight !== false && sync.highlightSpokenWords !== false
     if (highlightingEnabled) {
       await sendMessageToCurrentTab({
         id: 'highlightSessionStart',

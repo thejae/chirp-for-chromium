@@ -207,49 +207,6 @@ function buildCharMapFromRange(range: Range): CharEntry[] {
 }
 
 /**
- * Fallback helper that locates `targetText` across visible `document.body`
- * text nodes if the browser's selection range was collapsed before the
- * highlight session started.
- */
-function findCharMapInDocumentBody(targetText: string): CharEntry[] {
-  if (typeof document === 'undefined' || !document.body || !targetText) {
-    return []
-  }
-
-  const allEntries: CharEntry[] = []
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-  let node = walker.nextNode() as Text | null
-
-  while (node) {
-    const parentTag = node.parentElement?.tagName
-    if (
-      parentTag !== 'SCRIPT' &&
-      parentTag !== 'STYLE' &&
-      parentTag !== 'NOSCRIPT'
-    ) {
-      const val = node.nodeValue || ''
-      for (let i = 0; i < val.length; i++) {
-        allEntries.push({ node, offset: i, char: val[i] })
-      }
-    }
-    node = walker.nextNode() as Text | null
-  }
-
-  if (!allEntries.length) return []
-
-  const fullText = allEntries.map((e) => e.char).join('')
-  const { timings } = matchChunkWords(targetText.slice(0, 120), fullText, 0)
-  if (!timings.length) return []
-
-  const startIdx = timings[0].startIndex
-  const endIdx = Math.min(
-    allEntries.length,
-    startIdx + Math.max(targetText.length * 2, 200),
-  )
-  return allEntries.slice(startIdx, endIdx)
-}
-
-/**
  * Segments a synthesized sentence into word-like tokens using `Intl.Segmenter`
  * and matches each token sequentially against the flat `chars` string starting
  * at `startCursor`, returning word index spans and normalized timing ratios
@@ -390,20 +347,13 @@ export function startHighlightSession(payload?: {
     candidateMap = buildCharMapFromRange(candidateRange)
   }
 
-  if (candidateMap.length && payload?.text) {
+  if (!candidateMap.length) return
+
+  if (payload?.text) {
     const domStr = candidateMap.map((c) => c.char).join('')
     const { timings } = matchChunkWords(payload.text.slice(0, 120), domStr, 0)
-    if (!timings.length) {
-      candidateMap = []
-      candidateRange = null
-    }
+    if (!timings.length) return
   }
-
-  if (!candidateMap.length && payload?.text) {
-    candidateMap = findCharMapInDocumentBody(payload.text)
-  }
-
-  if (!candidateMap.length) return
 
   ensureHighlightStyles()
   savedRange = candidateRange

@@ -193,7 +193,7 @@ export function Preferences() {
     setPreviewing(true)
     const response = await chrome.runtime.sendMessage({
       id: 'readAloud',
-      payload: { text: sampleText },
+      payload: { text: sampleText, highlight: false },
     })
     setPreviewing(false)
     if (isError(response)) {

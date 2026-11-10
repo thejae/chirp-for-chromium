@@ -71,7 +71,7 @@ export function Sandbox() {
 
     const response = await chrome.runtime.sendMessage({
       id: 'readAloud',
-      payload: { text },
+      payload: { text, highlight: false },
     })
     if (isError(response)) setError(response)
 
