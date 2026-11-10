@@ -8,6 +8,7 @@ import { Usage } from './components/views/Usage'
 import { Preferences } from './components/views/Preferences'
 import { Sandbox } from './components/views/Sandbox'
 import { Logs } from './components/views/Logs'
+import { Settings } from './components/views/Settings'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
 import { GitHub } from 'react-feather'
@@ -57,6 +58,7 @@ export function Extension() {
           <Route path="/sandbox" element={<Sandbox />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/usage" element={<Usage />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<Logs />} />
         </Routes>
       </main>

@@ -47,11 +47,23 @@ window.addEventListener('load', function () {
     })
 })
 
+function getSelectedText(): string {
+  const active = document.activeElement as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null
+  if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+    const start = active.selectionStart ?? 0
+    const end = active.selectionEnd ?? 0
+    return (active.value || '').slice(start, end).trim()
+  }
+  return (window.getSelection()?.toString() || '').trim()
+}
+
 // React component -------------------------------------------------------------
 function ContentScript() {
   const { sync, ready } = useSync()
   const [error, setError] = useState<null | TError>(null)
-  const handlers = { setError }
 
   async function handleMessages(request, sender, sendResponse) {
     console.log('Handling message...', request, sender, sendResponse)
@@ -70,7 +82,47 @@ function ContentScript() {
   useMount(function () {
     chrome.runtime.onMessage.addListener(handleMessages)
 
-    return () => chrome.runtime.onMessage.removeListener(handleMessages)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    let lastReadText = ''
+
+    function scheduleAutoRead() {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(async () => {
+        const text = getSelectedText()
+        if (!text) {
+          lastReadText = ''
+          return
+        }
+        if (text.length < 2 || text === lastReadText) return
+
+        const currentSync = await chrome.storage.sync.get()
+        if (currentSync.autoReadAloud === false) return
+
+        const hasCredentials =
+          (currentSync.mode === 'free' && Boolean(currentSync.apiKey)) ||
+          (currentSync.mode === 'paid' && Boolean(currentSync.user?.credits))
+        if (!hasCredentials) return
+
+        lastReadText = text
+        chrome.runtime.sendMessage({ id: 'readAloud', payload: { text } })
+      }, 300)
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+      if (event.key === 'Shift' || event.shiftKey) {
+        scheduleAutoRead()
+      }
+    }
+
+    document.addEventListener('mouseup', scheduleAutoRead)
+    document.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      document.removeEventListener('mouseup', scheduleAutoRead)
+      document.removeEventListener('keyup', handleKeyUp)
+      chrome.runtime.onMessage.removeListener(handleMessages)
+    }
   })
 
   if (!error || !ready) {

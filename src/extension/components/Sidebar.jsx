@@ -7,6 +7,7 @@ import {
   GitHub,
   HelpCircle,
   Key,
+  Settings,
   Sliders,
   Star,
   Terminal,
@@ -77,6 +78,9 @@ export function Sidebar() {
           disabledReason="Usage history is available when signed in with purchased credits"
         >
           Usage
+        </Sidebar.Item>
+        <Sidebar.Item Icon={Settings} color="bg-amber-600" to="/settings">
+          Settings
         </Sidebar.Item>
         <Sidebar.Item Icon={Terminal} color="bg-slate-600" to="/logs">
           Log

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.0] - 2026-11-10
+
+### Added
+- Dedicated **Settings** tab (`src/extension/components/views/Settings.tsx`) with an **Auto-read highlighted text** toggle (`autoReadAloud` in `chrome.storage.sync`).
+- Automatic webpage selection listener (`mouseup` / `Shift` `keyup` with 300ms debounce) in `src/extension/content-script.tsx` that automatically reads newly highlighted text aloud when `autoReadAloud` is enabled.
+
 ## [13.5.0] - 2026-11-09
 
 ### Changed

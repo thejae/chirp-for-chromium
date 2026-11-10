@@ -781,6 +781,8 @@ async function setDefaultSettings() {
     apiKey: sync.apiKey || '',
     audioProfile: sync.audioProfile || 'default',
     volumeGainDb: sync.volumeGainDb || 0,
+    autoReadAloud:
+      typeof sync.autoReadAloud === 'boolean' ? sync.autoReadAloud : true,
   })
 }
 
