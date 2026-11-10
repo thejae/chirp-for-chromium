@@ -46,6 +46,12 @@ let sessionActive = false
 let isAudioLoading = false
 let currentSentenceRange: Range | null = null
 let currentWordRange: Range | null = null
+let activeChunkTimings: WordTiming[] = []
+let activeChunkStartTime = 0
+let activeChunkElapsedMs = 0
+let activeChunkTotalDurationMs = 0
+let activeLastWordIndex = -1
+let isHighlightPaused = false
 
 function handleUserScroll() {
   userScrolled = true
@@ -354,7 +360,13 @@ function autoScrollToRangeIfNeeded(range: Range) {
   const margin = 90
   if (rect.top < margin || rect.bottom > window.innerHeight - margin) {
     const targetDelta = rect.top - window.innerHeight * 0.35
-    window.scrollBy({ top: targetDelta, behavior: 'smooth' })
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollBy({
+      top: targetDelta,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    })
   }
 }
 
@@ -427,6 +439,47 @@ export function startHighlightSession(payload?: {
   }
 }
 
+function runStep(now: number) {
+  if (!sessionActive || isHighlightPaused) return
+
+  const elapsed = now - activeChunkStartTime
+  const ratio = Math.min(1, Math.max(0, elapsed / activeChunkTotalDurationMs))
+
+  let activeIdx = activeChunkTimings.findIndex(
+    (t) => ratio >= t.startRatio && ratio <= t.endRatio,
+  )
+  if (activeIdx === -1) {
+    activeIdx = activeChunkTimings.length - 1
+  }
+
+  if (activeIdx !== activeLastWordIndex && activeIdx >= 0) {
+    activeLastWordIndex = activeIdx
+    const activeWord = activeChunkTimings[activeIdx]
+    if (activeWord) {
+      const wordRange = createDomRangeFromCharSpan(
+        charMap,
+        activeWord.startIndex,
+        activeWord.endIndex,
+      )
+      currentWordRange = wordRange
+      const highlights = getCssHighlights()
+      if (wordRange && highlights) {
+        const wordHighlight = createCustomHighlight(wordRange)
+        if (wordHighlight) {
+          highlights.set(WORD_HIGHLIGHT_NAME, wordHighlight)
+        }
+      }
+      renderOverlayRects()
+    }
+  }
+
+  if (ratio < 1) {
+    rafId = requestAnimationFrame(runStep)
+  } else {
+    rafId = null
+  }
+}
+
 /**
  * Keeps the entire selected block highlighted and animates the active word
  * highlight across `duration` seconds using `requestAnimationFrame`.
@@ -445,7 +498,6 @@ export function highlightChunk({
   // Playback has begun: clear the loading perimeter animation
   isAudioLoading = false
 
-  const highlights = getCssHighlights()
   const fullDomString = charMap.map((c) => c.char).join('')
   const { timings, nextCursor } = matchChunkWords(
     text,
@@ -471,48 +523,38 @@ export function highlightChunk({
     Number.isFinite(duration) && duration > 0
       ? duration * 1000
       : Math.max(800, text.length * 65)
-  const startTime = performance.now()
-  let lastWordIndex = -1
 
-  function step(now: number) {
-    if (!sessionActive) return
+  activeChunkTimings = timings
+  activeChunkTotalDurationMs = totalDurationMs
+  activeChunkStartTime = performance.now()
+  activeChunkElapsedMs = 0
+  activeLastWordIndex = -1
+  isHighlightPaused = false
 
-    const elapsed = now - startTime
-    const ratio = Math.min(1, Math.max(0, elapsed / totalDurationMs))
+  rafId = requestAnimationFrame(runStep)
+}
 
-    let activeIdx = timings.findIndex(
-      (t) => ratio >= t.startRatio && ratio <= t.endRatio,
-    )
-    if (activeIdx === -1) {
-      activeIdx = timings.length - 1
-    }
+/**
+ * Pauses the word highlight animation without clearing the current highlighted
+ * sentence and word positions on screen.
+ */
+export function pauseHighlightSession() {
+  if (!sessionActive || isHighlightPaused) return
+  isHighlightPaused = true
+  cancelActiveAnimation()
+  activeChunkElapsedMs = Math.max(0, performance.now() - activeChunkStartTime)
+}
 
-    if (activeIdx !== lastWordIndex) {
-      lastWordIndex = activeIdx
-      const activeWord = timings[activeIdx]
-      const wordRange = createDomRangeFromCharSpan(
-        charMap,
-        activeWord.startIndex,
-        activeWord.endIndex,
-      )
-      currentWordRange = wordRange
-      if (wordRange && highlights) {
-        const wordHighlight = createCustomHighlight(wordRange)
-        if (wordHighlight) {
-          highlights.set(WORD_HIGHLIGHT_NAME, wordHighlight)
-        }
-      }
-      renderOverlayRects()
-    }
+/**
+ * Resumes word highlight animation from the exact elapsed position.
+ */
+export function resumeHighlightSession() {
+  if (!sessionActive || !isHighlightPaused) return
+  isHighlightPaused = false
+  if (!activeChunkTimings.length) return
 
-    if (ratio < 1) {
-      rafId = requestAnimationFrame(step)
-    } else {
-      rafId = null
-    }
-  }
-
-  rafId = requestAnimationFrame(step)
+  activeChunkStartTime = performance.now() - activeChunkElapsedMs
+  rafId = requestAnimationFrame(runStep)
 }
 
 /**
@@ -524,6 +566,11 @@ export function endHighlightSession(
   options: { restoreSelection?: boolean } = { restoreSelection: true },
 ) {
   cancelActiveAnimation()
+  isHighlightPaused = false
+  activeChunkTimings = []
+  activeChunkElapsedMs = 0
+  activeChunkTotalDurationMs = 0
+  activeLastWordIndex = -1
 
   if (typeof window !== 'undefined') {
     window.removeEventListener('wheel', handleUserScroll)

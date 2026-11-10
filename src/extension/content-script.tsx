@@ -15,6 +15,8 @@ import {
 import {
   endHighlightSession,
   highlightChunk,
+  pauseHighlightSession,
+  resumeHighlightSession,
   startHighlightSession,
 } from './helpers/highlight-helpers'
 
@@ -38,6 +40,16 @@ chrome.runtime.onMessage.addListener(function (request) {
 
   if (request.id === 'highlightChunk') {
     highlightChunk(request.payload)
+    return
+  }
+
+  if (request.id === 'highlightPause') {
+    pauseHighlightSession()
+    return
+  }
+
+  if (request.id === 'highlightResume') {
+    resumeHighlightSession()
     return
   }
 

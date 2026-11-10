@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.10.0] - 2026-11-10
+
+### Added
+- **Persistent MiniPlayer Audio Bar**: Docked audio controller (`src/extension/components/player/MiniPlayer.tsx`) displayed across popup views with non-destructive Play / Pause / Resume controls preserving the user's sentence position, real-time sentence progress (`Sentence X of Y`), elapsed indicator, active text snippet preview, and active voice details pill with direct navigation to Preferences.
+- **Audio Pause & Resume Engine**: Implemented non-destructive audio pausing and resumption across `src/extension/offscreen.ts`, `src/extension/service-worker.ts`, and in-page highlighting in `src/extension/helpers/highlight-helpers.ts` (`highlightPause`, `highlightResume`).
+- **Show Persistent Audio Player Toggle**: Added user setting in `src/extension/components/views/Settings.tsx` (`showMiniPlayer`, default enabled) allowing users to turn off the bottom audio player bar whenever desired.
+- **React ErrorBoundary**: Added top-level error boundary (`src/components/ErrorBoundary.tsx` and `src/extension/popup.tsx`) preventing white-screen crashes on unhandled render errors with a friendly reload action.
+- **Accessible Dialog Focus Trap**: Added keyboard Tab focus trapping and previous focus restoration on dismissal in `src/components/Dialog.tsx`.
+
+### Changed
+- **WCAG Non-Text Contrast Compliance**: Increased inactive settings switch track contrast in `src/extension/components/views/Settings.tsx` to ≥ 3:1 (`border-neutral-400` on `bg-neutral-200`) meeting WCAG 1.4.11.
+- **Semantic External Links**: Rendered external navigation links (Changelog, Contribute, Review) in `src/extension/components/Sidebar.jsx` as semantic `<a href="..." target="_blank" rel="noopener noreferrer">` tags.
+- **Reduced Motion Support**: Updated programmatic window scrolling in `src/extension/helpers/highlight-helpers.ts` to respect `prefers-reduced-motion: reduce`.
+
 ## [13.9.0] - 2026-11-10
 
 ### Added

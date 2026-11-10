@@ -8,11 +8,26 @@ import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
 // Local state -----------------------------------------------------------------
 let queue = []
 let playing = false
+let paused = false
 let cancellationToken = false
 let activeChunkText = ''
+let totalChunks = 0
+let currentChunkIndex = 0
+let currentChunkDuration = 0
 let highlightingEnabled = true
 let bootstrappedResolver = null
 const bootstrapped = new Promise((resolve) => (bootstrappedResolver = resolve))
+
+async function updatePlaybackSessionState() {
+  await chrome.storage.session.set({
+    playing,
+    paused,
+    activeChunkText,
+    totalChunks,
+    currentChunkIndex,
+    currentChunkDuration,
+  })
+}
 
 // Bootstrap -------------------------------------------------------------------
 initializeSentry()
@@ -133,6 +148,12 @@ export const handlers = {
 
     queue.push(...chunks)
     playing = true
+    paused = false
+    totalChunks = chunks.length
+    currentChunkIndex = 0
+    currentChunkDuration = 0
+    activeChunkText = chunks[0] || ''
+    await updatePlaybackSessionState()
     updateContextMenus()
 
     let count = 0
@@ -152,7 +173,12 @@ export const handlers = {
       if (cancellationToken) {
         cancellationToken = false
         playing = false
+        paused = false
+        totalChunks = 0
+        currentChunkIndex = 0
+        currentChunkDuration = 0
         activeChunkText = ''
+        await updatePlaybackSessionState()
         updateContextMenus()
         if (highlightingEnabled) {
           await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
@@ -162,6 +188,8 @@ export const handlers = {
 
       const text = queue.shift()
       activeChunkText = text
+      currentChunkIndex = count
+      await updatePlaybackSessionState()
       const nextText = queue[0]
 
       if (nextText) {
@@ -176,7 +204,12 @@ export const handlers = {
       try {
         if (isError(audioUri)) {
           playing = false
+          paused = false
+          totalChunks = 0
+          currentChunkIndex = 0
+          currentChunkDuration = 0
           activeChunkText = ''
+          await updatePlaybackSessionState()
           updateContextMenus()
           if (highlightingEnabled) {
             await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
@@ -195,7 +228,12 @@ export const handlers = {
         console.warn('Failed to play audio', e)
         await appendLog('WARN', 'Audio playback interrupted or failed', e?.message)
         playing = false
+        paused = false
+        totalChunks = 0
+        currentChunkIndex = 0
+        currentChunkDuration = 0
         activeChunkText = ''
+        await updatePlaybackSessionState()
         updateContextMenus()
         if (highlightingEnabled) {
           await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
@@ -212,7 +250,12 @@ export const handlers = {
     }
 
     playing = false
+    paused = false
+    totalChunks = 0
+    currentChunkIndex = 0
+    currentChunkDuration = 0
     activeChunkText = ''
+    await updatePlaybackSessionState()
     updateContextMenus()
     if (highlightingEnabled) {
       await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
@@ -221,6 +264,8 @@ export const handlers = {
     return Promise.resolve(true)
   },
   chunkPlaybackStarted: async function ({ duration }) {
+    currentChunkDuration = duration || 0
+    await updatePlaybackSessionState()
     if (!playing || !highlightingEnabled || !activeChunkText) return false
     await sendMessageToCurrentTab({
       id: 'highlightChunk',
@@ -288,7 +333,12 @@ export const handlers = {
     cancellationToken = true
     queue = []
     playing = false
+    paused = false
+    totalChunks = 0
+    currentChunkIndex = 0
+    currentChunkDuration = 0
     activeChunkText = ''
+    await updatePlaybackSessionState()
     updateContextMenus()
     if (highlightingEnabled) {
       await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
@@ -305,6 +355,65 @@ export const handlers = {
     }
 
     return Promise.resolve(true)
+  },
+  pauseReading: async function () {
+    if (!playing || paused) return false
+    paused = true
+    await updatePlaybackSessionState()
+    try {
+      await createOffscreenDocument()
+      await chrome.runtime.sendMessage({
+        id: 'pause',
+        offscreen: true,
+      })
+    } catch (e) {
+      console.warn('Failed to pause audio', e)
+    }
+    if (highlightingEnabled) {
+      await sendMessageToCurrentTab({ id: 'highlightPause' })
+    }
+    await appendLog('INFO', 'Audio playback paused')
+    return true
+  },
+  resumeReading: async function () {
+    if (!playing || !paused) return false
+    paused = false
+    await updatePlaybackSessionState()
+    try {
+      await createOffscreenDocument()
+      await chrome.runtime.sendMessage({
+        id: 'resume',
+        offscreen: true,
+      })
+    } catch (e) {
+      console.warn('Failed to resume audio', e)
+    }
+    if (highlightingEnabled) {
+      await sendMessageToCurrentTab({ id: 'highlightResume' })
+    }
+    await appendLog('INFO', 'Audio playback resumed')
+    return true
+  },
+  togglePlayPause: async function () {
+    if (!playing) {
+      return this.readAloudShortcut()
+    }
+    if (paused) {
+      return this.resumeReading()
+    }
+    return this.pauseReading()
+  },
+  getPlaybackTime: async function () {
+    if (!playing) return { currentTime: 0, duration: 0, paused: false }
+    try {
+      await createOffscreenDocument()
+      return await chrome.runtime.sendMessage({
+        id: 'getPlaybackTime',
+        offscreen: true,
+      })
+    } catch {
+      return { currentTime: 0, duration: currentChunkDuration, paused }
+    }
   },
   download: async function ({ text }) {
     console.log('Downloading audio...', { text })
@@ -733,8 +842,8 @@ async function getActiveTabSelection() {
 }
 
 async function updateContextMenus() {
-  console.log('Updating context menus...', { playing })
-  await chrome.storage.session.set({ playing })
+  console.log('Updating context menus...', { playing, paused })
+  await updatePlaybackSessionState()
 
   // Prevents context menus from being updated before they are created,
   // which causes an unnecessary error in the console.

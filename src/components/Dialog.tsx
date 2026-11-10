@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { useMount } from '../hooks/useMount'
 import { useOutsideClick } from '../hooks/useOutsideClick'
 
@@ -11,9 +11,9 @@ type DialogProps = {
 }
 
 /**
- * Accessible modal dialog with Escape key dismissal, backdrop click handling,
- * and ARIA dialog semantics. Works inside both the extension popup and the
- * injected content-script Shadow DOM.
+ * Accessible modal dialog with focus trapping, previous focus restoration,
+ * Escape key dismissal, backdrop click handling, and ARIA dialog semantics.
+ * Works inside both the extension popup and the injected content-script Shadow DOM.
  */
 export function Dialog({
   title,
@@ -23,18 +23,56 @@ export function Dialog({
   ...args
 }: DialogProps) {
   const titleId = useId()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const outsideClickRef = useOutsideClick(onClose)
+
   useMount(() => document.getSelection()?.removeAllRanges())
 
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector)
+    if (focusable && focusable.length > 0) {
+      focusable[0].focus()
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation()
         onClose()
+        return
+      }
+
+      if (event.key === 'Tab' && dialogRef.current) {
+        const elements = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+        ).filter((el) => el.offsetParent !== null)
+
+        if (elements.length === 0) {
+          event.preventDefault()
+          return
+        }
+
+        const first = elements[0]
+        const last = elements[elements.length - 1]
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first.focus()
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus?.()
+    }
   }, [onClose])
 
   return (
@@ -48,7 +86,10 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         style={{ width: 500, maxWidth: '90vw' }}
-        ref={useOutsideClick(onClose)}
+        ref={(node) => {
+          dialogRef.current = node
+          outsideClickRef.current = node
+        }}
         className="border border-neutral-200 bg-white h-fit rounded-xl shadow-xl animate-popup"
       >
         <div className="flex px-6 pt-5 pb-0">

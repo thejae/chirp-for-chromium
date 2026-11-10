@@ -132,11 +132,26 @@ Sidebar.Item = function Item({
       return
     }
 
-    if (to.startsWith('http')) {
-      return chrome.tabs.create({ url: to })
-    }
-
     navigate(to)
+  }
+
+  if (to.startsWith('http')) {
+    return (
+      <a
+        href={to}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={twMerge(
+          'px-1.5 py-1.5 flex items-center group text-xs font-medium rounded-md cursor-pointer transition-colors w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+          'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80',
+        )}
+      >
+        <div className={`p-1 rounded mr-2 text-white shrink-0 ${color}`}>
+          <Icon size={13} className="group-hover:animate-wiggle" />
+        </div>
+        <div className="truncate">{children}</div>
+      </a>
+    )
   }
 
   return (

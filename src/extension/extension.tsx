@@ -9,6 +9,7 @@ import { Preferences } from './components/views/Preferences'
 import { Sandbox } from './components/views/Sandbox'
 import { Logs } from './components/views/Logs'
 import { Settings } from './components/views/Settings'
+import { MiniPlayer } from './components/player/MiniPlayer'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
 import { GitHub } from 'react-feather'
@@ -28,7 +29,7 @@ export const errorStore = createStore<null | TError>(null)
  */
 export function Extension() {
   const navigate = useNavigate()
-  const { ready } = useSync()
+  const { sync, ready } = useSync()
   const [error, setError] = useStore(errorStore)
 
   useMount(() => {
@@ -63,16 +64,19 @@ export function Extension() {
       className="bg-neutral-50 flex text-neutral-800"
     >
       <Sidebar />
-      <main className="w-full p-4 overflow-y-auto bg-neutral-100/60">
-        <Routes>
-          <Route path="/preferences" element={<Preferences />} />
-          <Route path="/sandbox" element={<Sandbox />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/usage" element={<Usage />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/logs" element={<Logs />} />
-        </Routes>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main className="flex-1 p-4 overflow-y-auto bg-neutral-100/60">
+          <Routes>
+            <Route path="/preferences" element={<Preferences />} />
+            <Route path="/sandbox" element={<Sandbox />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/usage" element={<Usage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/logs" element={<Logs />} />
+          </Routes>
+        </main>
+        {sync.showMiniPlayer !== false && <MiniPlayer />}
+      </div>
       {error && (
         <Dialog
           title={error.errorTitle}
