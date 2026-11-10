@@ -1,11 +1,11 @@
 /**
- * In-page spoken sentence and word highlighter powered by the Chromium
- * CSS Custom Highlight API (`CSS.highlights`).
+ * In-page spoken sentence and word highlighter.
  *
- * Highlights both the active sentence (`::highlight(chirp-sentence)`) and the
- * currently spoken word (`::highlight(chirp-word)`) directly on the webpage
- * without mutating DOM nodes, auto-scrolls unless the user manually scrolls,
- * and restores the user's original selection when playback finishes.
+ * Uses both Chromium's CSS Custom Highlight API (`CSS.highlights`) and a
+ * non-intrusive `pointer-events: none` viewport overlay built from DOM
+ * `Range.getClientRects()` so the active sentence and active word are always
+ * clearly visible across any site theme or stacking context without mutating
+ * webpage text nodes.
  */
 
 export type CharEntry = {
@@ -23,6 +23,7 @@ export type WordTiming = {
 }
 
 const STYLE_ELEMENT_ID = 'chirp3-custom-highlight-styles'
+const OVERLAY_CONTAINER_ID = 'chirp3-highlight-overlay'
 const SENTENCE_HIGHLIGHT_NAME = 'chirp-sentence'
 const WORD_HIGHLIGHT_NAME = 'chirp-word'
 
@@ -42,9 +43,16 @@ let searchCursor = 0
 let rafId: number | null = null
 let userScrolled = false
 let sessionActive = false
+let currentSentenceRange: Range | null = null
+let currentWordRange: Range | null = null
 
 function handleUserScroll() {
   userScrolled = true
+  renderOverlayRects()
+}
+
+function handleViewportScrollOrResize() {
+  renderOverlayRects()
 }
 
 function handleUserKeyScroll(event: KeyboardEvent) {
@@ -61,15 +69,80 @@ function ensureHighlightStyles() {
   style.id = STYLE_ELEMENT_ID
   style.textContent = `
     ::highlight(${SENTENCE_HIGHLIGHT_NAME}) {
-      background-color: rgba(59, 130, 246, 0.16);
-      color: inherit;
+      background-color: rgba(147, 197, 253, 0.38);
     }
     ::highlight(${WORD_HIGHLIGHT_NAME}) {
-      background-color: rgba(250, 204, 21, 0.72);
-      color: #111827;
+      background-color: rgba(250, 204, 21, 0.85);
+      color: #000000;
     }
   `
   ;(document.head || document.documentElement).appendChild(style)
+}
+
+function getOrCreateOverlayContainer(): HTMLElement | null {
+  if (typeof document === 'undefined' || !document.body) return null
+  let container = document.getElementById(OVERLAY_CONTAINER_ID)
+  if (!container) {
+    container = document.createElement('div')
+    container.id = OVERLAY_CONTAINER_ID
+    container.style.cssText =
+      'position:fixed;inset:0;pointer-events:none;z-index:2147483646;overflow:hidden;'
+    document.body.appendChild(container)
+  }
+  return container
+}
+
+function clearOverlayContainer() {
+  if (typeof document === 'undefined') return
+  const container = document.getElementById(OVERLAY_CONTAINER_ID)
+  if (container) {
+    container.replaceChildren()
+  }
+}
+
+function renderOverlayRects() {
+  const container = getOrCreateOverlayContainer()
+  if (!container) return
+  container.replaceChildren()
+
+  if (currentSentenceRange) {
+    const rects = Array.from(currentSentenceRange.getClientRects())
+    for (const rect of rects) {
+      if (rect.width <= 0 || rect.height <= 0) continue
+      const el = document.createElement('div')
+      el.style.cssText = `
+        position: fixed;
+        left: ${rect.left - 1}px;
+        top: ${rect.top - 1}px;
+        width: ${rect.width + 2}px;
+        height: ${rect.height + 2}px;
+        background-color: rgba(59, 130, 246, 0.16);
+        border-radius: 3px;
+        pointer-events: none;
+      `
+      container.appendChild(el)
+    }
+  }
+
+  if (currentWordRange) {
+    const rects = Array.from(currentWordRange.getClientRects())
+    for (const rect of rects) {
+      if (rect.width <= 0 || rect.height <= 0) continue
+      const el = document.createElement('div')
+      el.style.cssText = `
+        position: fixed;
+        left: ${rect.left - 2}px;
+        top: ${rect.top - 1}px;
+        width: ${rect.width + 4}px;
+        height: ${rect.height + 2}px;
+        background-color: rgba(250, 204, 21, 0.42);
+        border-bottom: 2px solid #d97706;
+        border-radius: 3px;
+        pointer-events: none;
+      `
+      container.appendChild(el)
+    }
+  }
 }
 
 function getCssHighlights(): any | null {
@@ -134,6 +207,49 @@ function buildCharMapFromRange(range: Range): CharEntry[] {
 }
 
 /**
+ * Fallback helper that locates `targetText` across visible `document.body`
+ * text nodes if the browser's selection range was collapsed before the
+ * highlight session started.
+ */
+function findCharMapInDocumentBody(targetText: string): CharEntry[] {
+  if (typeof document === 'undefined' || !document.body || !targetText) {
+    return []
+  }
+
+  const allEntries: CharEntry[] = []
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  let node = walker.nextNode() as Text | null
+
+  while (node) {
+    const parentTag = node.parentElement?.tagName
+    if (
+      parentTag !== 'SCRIPT' &&
+      parentTag !== 'STYLE' &&
+      parentTag !== 'NOSCRIPT'
+    ) {
+      const val = node.nodeValue || ''
+      for (let i = 0; i < val.length; i++) {
+        allEntries.push({ node, offset: i, char: val[i] })
+      }
+    }
+    node = walker.nextNode() as Text | null
+  }
+
+  if (!allEntries.length) return []
+
+  const fullText = allEntries.map((e) => e.char).join('')
+  const { timings } = matchChunkWords(targetText.slice(0, 120), fullText, 0)
+  if (!timings.length) return []
+
+  const startIdx = timings[0].startIndex
+  const endIdx = Math.min(
+    allEntries.length,
+    startIdx + Math.max(targetText.length * 2, 200),
+  )
+  return allEntries.slice(startIdx, endIdx)
+}
+
+/**
  * Segments a synthesized sentence into word-like tokens using `Intl.Segmenter`
  * and matches each token sequentially against the flat `chars` string starting
  * at `startCursor`, returning word index spans and normalized timing ratios
@@ -145,20 +261,22 @@ export function matchChunkWords(
   startCursor: number,
 ): { timings: WordTiming[]; nextCursor: number } {
   const SegmenterCtor = (Intl as any).Segmenter
-  const rawSegments: Array<{ segment: string; index: number; isWordLike?: boolean }> =
+  const rawSegments: Array<{
+    segment: string
+    index: number
+    isWordLike?: boolean
+  }> =
     typeof SegmenterCtor === 'function'
       ? Array.from(
           new SegmenterCtor(undefined, { granularity: 'word' }).segment(
             chunkText,
           ),
         )
-      : chunkText
-          .split(/(\s+)/)
-          .map((segment, idx) => ({
-            segment,
-            index: idx,
-            isWordLike: Boolean(segment.trim()),
-          }))
+      : chunkText.split(/(\s+)/).map((segment, idx) => ({
+          segment,
+          index: idx,
+          isWordLike: Boolean(segment.trim()),
+        }))
 
   const matchedWords: Array<{
     word: string
@@ -193,8 +311,7 @@ export function matchChunkWords(
     cursor = foundAt + word.length
   }
 
-  const totalWeight =
-    matchedWords.reduce((sum, w) => sum + w.weight, 0) || 1
+  const totalWeight = matchedWords.reduce((sum, w) => sum + w.weight, 0) || 1
   let accumulated = 0
 
   const timings: WordTiming[] = matchedWords.map((w) => {
@@ -252,31 +369,41 @@ function autoScrollToRangeIfNeeded(range: Range) {
 
 /**
  * Captures the user's current DOM selection `Range`, prepares the character
- * map, attaches user-scroll disengagement listeners, and hides the browser's
- * native selection while custom highlights are active.
+ * map, attaches user-scroll disengagement listeners, and highlights the first
+ * sentence immediately.
  */
-export function startHighlightSession(payload?: { text?: string }) {
-  endHighlightSession({ restoreSelection: false })
+export function startHighlightSession(payload?: {
+  text?: string
+  firstChunk?: string
+}) {
+  // Restore any previous saved selection before reading `window.getSelection()`
+  endHighlightSession({ restoreSelection: true })
 
-  if (typeof window === 'undefined' || !getCssHighlights()) return
+  if (typeof window === 'undefined') return
 
   const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0) return
+  let candidateRange: Range | null = null
+  let candidateMap: CharEntry[] = []
 
-  const range = selection.getRangeAt(0)
-  if (range.collapsed) return
+  if (selection && selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed) {
+    candidateRange = selection.getRangeAt(0).cloneRange()
+    candidateMap = buildCharMapFromRange(candidateRange)
+  }
 
-  const candidateRange = range.cloneRange()
-  const candidateMap = buildCharMapFromRange(candidateRange)
-  if (!candidateMap.length) return
-
-  // Verify the text being read matches the active DOM selection (so Sandbox or
-  // Voice Preview playback never clears or highlights unrelated page selections).
-  if (payload?.text) {
+  if (candidateMap.length && payload?.text) {
     const domStr = candidateMap.map((c) => c.char).join('')
     const { timings } = matchChunkWords(payload.text.slice(0, 120), domStr, 0)
-    if (!timings.length) return
+    if (!timings.length) {
+      candidateMap = []
+      candidateRange = null
+    }
   }
+
+  if (!candidateMap.length && payload?.text) {
+    candidateMap = findCharMapInDocumentBody(payload.text)
+  }
+
+  if (!candidateMap.length) return
 
   ensureHighlightStyles()
   savedRange = candidateRange
@@ -288,9 +415,45 @@ export function startHighlightSession(payload?: { text?: string }) {
   window.addEventListener('wheel', handleUserScroll, { passive: true })
   window.addEventListener('touchmove', handleUserScroll, { passive: true })
   window.addEventListener('keydown', handleUserKeyScroll, { passive: true })
+  window.addEventListener('scroll', handleViewportScrollOrResize, {
+    passive: true,
+    capture: true,
+  })
+  window.addEventListener('resize', handleViewportScrollOrResize, {
+    passive: true,
+  })
 
-  // Hide the native browser blue selection so ::highlight styles are clearly visible
-  selection.removeAllRanges()
+  // Hide the native browser blue selection so custom highlights are clearly visible
+  if (selection && candidateRange) {
+    selection.removeAllRanges()
+  }
+
+  // Immediately highlight the first sentence while audio synthesis is in flight
+  if (payload?.firstChunk) {
+    const domStr = charMap.map((c) => c.char).join('')
+    const { timings } = matchChunkWords(payload.firstChunk, domStr, 0)
+    if (timings.length) {
+      const sentenceRange = createDomRangeFromCharSpan(
+        charMap,
+        timings[0].startIndex,
+        timings[timings.length - 1].endIndex,
+      )
+      if (sentenceRange) {
+        currentSentenceRange = sentenceRange
+        currentWordRange = createDomRangeFromCharSpan(
+          charMap,
+          timings[0].startIndex,
+          timings[0].endIndex,
+        )
+        const highlights = getCssHighlights()
+        const sentenceHighlight = createCustomHighlight(sentenceRange)
+        if (highlights && sentenceHighlight) {
+          highlights.set(SENTENCE_HIGHLIGHT_NAME, sentenceHighlight)
+        }
+        renderOverlayRects()
+      }
+    }
+  }
 }
 
 /**
@@ -306,9 +469,9 @@ export function highlightChunk({
 }) {
   cancelActiveAnimation()
 
-  const highlights = getCssHighlights()
-  if (!sessionActive || !highlights || !charMap.length || !text) return
+  if (!sessionActive || !charMap.length || !text) return
 
+  const highlights = getCssHighlights()
   const fullDomString = charMap.map((c) => c.char).join('')
   const { timings, nextCursor } = matchChunkWords(
     text,
@@ -327,12 +490,19 @@ export function highlightChunk({
     sentenceEnd,
   )
 
+  currentSentenceRange = sentenceRange
+  currentWordRange = null
+
   if (sentenceRange) {
-    const sentenceHighlight = createCustomHighlight(sentenceRange)
-    if (sentenceHighlight) {
-      highlights.set(SENTENCE_HIGHLIGHT_NAME, sentenceHighlight)
+    if (highlights) {
+      const sentenceHighlight = createCustomHighlight(sentenceRange)
+      if (sentenceHighlight) {
+        highlights.delete(WORD_HIGHLIGHT_NAME)
+        highlights.set(SENTENCE_HIGHLIGHT_NAME, sentenceHighlight)
+      }
     }
     autoScrollToRangeIfNeeded(sentenceRange)
+    renderOverlayRects()
   }
 
   const totalDurationMs =
@@ -363,12 +533,14 @@ export function highlightChunk({
         activeWord.startIndex,
         activeWord.endIndex,
       )
-      if (wordRange) {
+      currentWordRange = wordRange
+      if (wordRange && highlights) {
         const wordHighlight = createCustomHighlight(wordRange)
         if (wordHighlight) {
           highlights.set(WORD_HIGHLIGHT_NAME, wordHighlight)
         }
       }
+      renderOverlayRects()
     }
 
     if (ratio < 1) {
@@ -382,8 +554,9 @@ export function highlightChunk({
 }
 
 /**
- * Stops any active word highlight animation, removes `CSS.highlights` entries,
- * detaches scroll listeners, and restores the user's original DOM selection.
+ * Stops any active word highlight animation, removes `CSS.highlights` and
+ * overlay entries, detaches scroll listeners, and restores the user's original
+ * DOM selection.
  */
 export function endHighlightSession(
   options: { restoreSelection?: boolean } = { restoreSelection: true },
@@ -394,7 +567,13 @@ export function endHighlightSession(
     window.removeEventListener('wheel', handleUserScroll)
     window.removeEventListener('touchmove', handleUserScroll)
     window.removeEventListener('keydown', handleUserKeyScroll)
+    window.removeEventListener('scroll', handleViewportScrollOrResize, true)
+    window.removeEventListener('resize', handleViewportScrollOrResize)
   }
+
+  currentSentenceRange = null
+  currentWordRange = null
+  clearOverlayContainer()
 
   const highlights = getCssHighlights()
   if (highlights) {

@@ -91,7 +91,7 @@ export function Sidebar() {
         <Sidebar.Item
           Icon={HelpCircle}
           color="bg-neutral-500"
-          to="https://wavenet-for-chrome.com/changelog"
+          to="https://github.com/thejae/chirp-for-chromium/blob/master/CHANGELOG.md"
         >
           Changelog
         </Sidebar.Item>

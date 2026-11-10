@@ -1,6 +1,6 @@
 {
   "name": "chirp3-for-chromium",
-  "version": "13.7.0",
+  "version": "13.7.1",
   "description": "A wrapper for Google Cloud Text-to-Speech that transform highlighted text into high-quality natural sounding audio.",
   "type": "module",
   "scripts": {

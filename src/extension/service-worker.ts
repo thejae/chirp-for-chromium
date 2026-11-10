@@ -91,7 +91,9 @@ chrome.runtime.onInstalled.addListener(async function (details) {
 
   const self = await chrome.management.getSelf()
   if (details.reason === 'update' && self.installType !== 'development') {
-    chrome.tabs.create({ url: 'https://wavenet-for-chrome.com/changelog' })
+    chrome.tabs.create({
+      url: 'https://github.com/thejae/chirp-for-chromium/blob/master/CHANGELOG.md',
+    })
   }
 
   // New installs should default to the paid mode.
@@ -140,7 +142,7 @@ export const handlers = {
     if (highlightingEnabled) {
       await sendMessageToCurrentTab({
         id: 'highlightSessionStart',
-        payload: { text },
+        payload: { text, firstChunk: chunks[0] },
       })
     }
     const prefetchQueue = []
@@ -909,12 +911,30 @@ async function sendMessageToCurrentTab(event) {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
   const currentTab = tabs[0]
 
-  if (!currentTab) {
-    console.warn('No current tab found. Aborting message send.')
+  if (
+    !currentTab?.id ||
+    currentTab.url?.startsWith('chrome://') ||
+    currentTab.url?.startsWith('edge://')
+  ) {
+    console.warn('No valid current tab found. Aborting message send.')
     return
   }
 
-  return chrome.tabs.sendMessage(currentTab.id, event).catch(() => {})
+  try {
+    return await chrome.tabs.sendMessage(currentTab.id, event)
+  } catch {
+    // If the tab was opened before the extension was loaded or reloaded,
+    // dynamically inject `content-script.js` and retry once.
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: currentTab.id },
+        files: ['content-script.js'],
+      })
+      return await chrome.tabs.sendMessage(currentTab.id, event)
+    } catch {
+      return
+    }
+  }
 }
 
 // TODO(mike): Ideally use pheonix channels instead of polling.

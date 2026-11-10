@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.1] - 2026-11-10
+
+### Changed
+- Updated Changelog link in `src/extension/components/Sidebar.jsx` and `src/extension/service-worker.ts` to point to `https://github.com/thejae/chirp-for-chromium/blob/master/CHANGELOG.md`.
+
+### Fixed
+- Fixed in-page sentence and word highlighting not appearing on tabs where `window.onload` had already fired before `document_idle` (or on tabs opened prior to extension reload) by registering `chrome.runtime.onMessage` immediately at module load in `src/extension/content-script.tsx`, auto-injecting `content-script.js` on demand in `sendMessageToCurrentTab`, decoding streaming `OGG_OPUS` durations via `AudioContext.decodeAudioData` in `src/extension/offscreen.ts`, and rendering a viewport `DOMRect` highlight overlay alongside `CSS.highlights` in `src/extension/helpers/highlight-helpers.ts`.
+
 ## [13.7.0] - 2026-11-10
 
 ### Added

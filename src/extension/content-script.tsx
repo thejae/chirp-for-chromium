@@ -18,11 +18,40 @@ import {
   startHighlightSession,
 } from './helpers/highlight-helpers'
 
-// Event listeners -------------------------------------------------------------
-window.addEventListener('load', function () {
-  console.log('load')
+let setContentError: ((error: TError | null) => void) | null = null
+
+// Register runtime message listener immediately at script evaluation time
+// so messages from the service worker are handled even if `window.onload`
+// already fired before `document_idle`.
+chrome.runtime.onMessage.addListener(function (request) {
+  if (!request) return
+
+  if (isError(request)) {
+    setContentError?.(request)
+    return
+  }
+
+  if (request.id === 'highlightSessionStart') {
+    startHighlightSession(request.payload)
+    return
+  }
+
+  if (request.id === 'highlightChunk') {
+    highlightChunk(request.payload)
+    return
+  }
+
+  if (request.id === 'highlightSessionEnd') {
+    endHighlightSession()
+    return
+  }
+})
+
+function mountContentScriptUi() {
+  if (!document.body || document.getElementById('chirp3-extension-root')) return
 
   const root = document.createElement('div')
+  root.id = 'chirp3-extension-root'
   const shadowRoot = root.attachShadow({ mode: 'open' })
 
   // Fetch the CSS file and replace rem values with px values, this is needed
@@ -50,46 +79,26 @@ window.addEventListener('load', function () {
     .catch((error) => {
       console.error('Failed to load CSS: ', error)
     })
-})
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', mountContentScriptUi, {
+    once: true,
+  })
+} else {
+  mountContentScriptUi()
+}
 
 // React component -------------------------------------------------------------
 function ContentScript() {
   const { sync, ready } = useSync()
   const [error, setError] = useState<null | TError>(null)
 
-  async function handleMessages(request, sender, sendResponse) {
-    console.log('Handling message...', request, sender, sendResponse)
-
-    if (!request) {
-      return
-    }
-
-    if (isError(request)) {
-      setError(request)
-
-      return
-    }
-
-    if (request.id === 'highlightSessionStart') {
-      startHighlightSession(request.payload)
-      return
-    }
-
-    if (request.id === 'highlightChunk') {
-      highlightChunk(request.payload)
-      return
-    }
-
-    if (request.id === 'highlightSessionEnd') {
-      endHighlightSession()
-      return
-    }
-  }
-
   useMount(function () {
-    chrome.runtime.onMessage.addListener(handleMessages)
-
-    return () => chrome.runtime.onMessage.removeListener(handleMessages)
+    setContentError = setError
+    return () => {
+      setContentError = null
+    }
   })
 
   if (!error || !ready) {

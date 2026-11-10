@@ -3,9 +3,38 @@ import { initializeSentry } from './helpers/sentry-helpers'
 // Local variables -------------------------------------------------------------
 let audioElement = new Audio()
 let shouldPlay = false
+let audioContext: AudioContext | null = null
 
 // Bootstrap -------------------------------------------------------------------
 initializeSentry()
+
+/**
+ * Decodes a data URI's audio buffer to obtain the exact duration in seconds
+ * when `HTMLAudioElement.duration` reports `Infinity` (common for streaming
+ * `OGG_OPUS` responses from Google Cloud TTS).
+ */
+async function resolveAudioDuration(
+  audioUri: string,
+  elementDuration: number,
+): Promise<number> {
+  if (Number.isFinite(elementDuration) && elementDuration > 0) {
+    return elementDuration
+  }
+  try {
+    const response = await fetch(audioUri)
+    const arrayBuffer = await response.arrayBuffer()
+    if (!audioContext) {
+      audioContext = new AudioContext()
+    }
+    const decoded = await audioContext.decodeAudioData(arrayBuffer)
+    if (Number.isFinite(decoded.duration) && decoded.duration > 0) {
+      return decoded.duration
+    }
+  } catch {
+    // Fallback handled by content script if decoding fails
+  }
+  return 0
+}
 
 // Event listeners -------------------------------------------------------------
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
@@ -35,10 +64,11 @@ const handlers = {
           return
         }
 
-        const duration = audioElement.duration
+        const rawDuration = audioElement.duration
         audioElement
           .play()
-          .then(() => {
+          .then(async () => {
+            const duration = await resolveAudioDuration(audioUri, rawDuration)
             chrome.runtime
               .sendMessage({
                 id: 'chunkPlaybackStarted',
