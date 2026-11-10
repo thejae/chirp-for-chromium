@@ -1,12 +1,13 @@
 {
   "name": "chirp3-for-chromium",
-  "version": "13.7.2",
+  "version": "13.8.0",
   "description": "A wrapper for Google Cloud Text-to-Speech that transform highlighted text into high-quality natural sounding audio.",
   "type": "module",
   "scripts": {
     "start:extension": "bun run build.js --environment=development",
     "start:extension:edge": "bun run build.js --environment=development --browser=edge",
     "build:extension": "bun run build.js --environment=production",
+    "build:extension:chrome": "bun run build.js --environment=production --browser=chrome",
     "build:extension:edge": "bun run build.js --environment=production --browser=edge",
     "start:website": "parcel src/website/index.html --dist-dir dist-website",
     "build:website": "parcel build src/website/index.html --dist-dir dist-website"

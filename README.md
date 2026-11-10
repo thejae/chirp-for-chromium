@@ -27,9 +27,10 @@ Interested in contributing? Follow these steps to set up your development enviro
 3. Start the development server for the extension:
    - **Chrome**: `npm run start:extension`
    - **Microsoft Edge**: `npm run start:extension:edge`
-4. To build a production release package in `releases/`:
-   - **Chrome**: `npm run build:extension`
-   - **Microsoft Edge**: `npm run build:extension:edge`
+4. To build production release packages in `releases/`:
+   - **Both Chrome & Edge**: `npm run build:extension`
+   - **Chrome only**: `npm run build:extension:chrome`
+   - **Microsoft Edge only**: `npm run build:extension:edge`
 5. To run the website locally, use `npm run start:website`.
 
 After running these commands, load the unpacked extension from the `dist` folder in `chrome://extensions` or `edge://extensions` (with Developer mode enabled).
