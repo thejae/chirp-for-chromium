@@ -12,6 +12,11 @@ import {
   createGithubIssueFromError,
   isError,
 } from './helpers/error-helpers'
+import {
+  endHighlightSession,
+  highlightChunk,
+  startHighlightSession,
+} from './helpers/highlight-helpers'
 
 // Event listeners -------------------------------------------------------------
 window.addEventListener('load', function () {
@@ -62,6 +67,21 @@ function ContentScript() {
     if (isError(request)) {
       setError(request)
 
+      return
+    }
+
+    if (request.id === 'highlightSessionStart') {
+      startHighlightSession(request.payload)
+      return
+    }
+
+    if (request.id === 'highlightChunk') {
+      highlightChunk(request.payload)
+      return
+    }
+
+    if (request.id === 'highlightSessionEnd') {
+      endHighlightSession()
       return
     }
   }

@@ -9,6 +9,8 @@ import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
 let queue = []
 let playing = false
 let cancellationToken = false
+let activeChunkText = ''
+let highlightingEnabled = true
 let bootstrappedResolver = null
 const bootstrapped = new Promise((resolve) => (bootstrappedResolver = resolve))
 
@@ -50,7 +52,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (offscreen) return
 
   if (!handlers[id]) throw new Error(`No handler found for ${id}`)
-  if (id !== 'clearLogs') {
+  if (id !== 'clearLogs' && id !== 'chunkPlaybackStarted') {
     appendLog('INFO', `Runtime message received: ${id}`, payload)
   }
   handlers[id](payload).then(sendResponse)
@@ -134,17 +136,29 @@ export const handlers = {
     let count = 0
     const sync = await chrome.storage.sync.get()
     const encoding = sync.readAloudEncoding
+    highlightingEnabled = sync.highlightSpokenWords !== false
+    if (highlightingEnabled) {
+      await sendMessageToCurrentTab({
+        id: 'highlightSessionStart',
+        payload: { text },
+      })
+    }
     const prefetchQueue = []
     cancellationToken = false
     while (queue.length) {
       if (cancellationToken) {
         cancellationToken = false
         playing = false
+        activeChunkText = ''
         updateContextMenus()
+        if (highlightingEnabled) {
+          await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+        }
         return
       }
 
       const text = queue.shift()
+      activeChunkText = text
       const nextText = queue[0]
 
       if (nextText) {
@@ -159,7 +173,11 @@ export const handlers = {
       try {
         if (isError(audioUri)) {
           playing = false
+          activeChunkText = ''
           updateContextMenus()
+          if (highlightingEnabled) {
+            await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+          }
           return audioUri
         }
 
@@ -174,7 +192,11 @@ export const handlers = {
         console.warn('Failed to play audio', e)
         await appendLog('WARN', 'Audio playback interrupted or failed', e?.message)
         playing = false
+        activeChunkText = ''
         updateContextMenus()
+        if (highlightingEnabled) {
+          await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+        }
 
         // Audio playback may have failed because the user stopped playback, or
         // called the readAloud function again. We need to return early to avoid
@@ -187,9 +209,21 @@ export const handlers = {
     }
 
     playing = false
+    activeChunkText = ''
     updateContextMenus()
+    if (highlightingEnabled) {
+      await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+    }
     await appendLog('INFO', 'Finished reading aloud all chunks')
     return Promise.resolve(true)
+  },
+  chunkPlaybackStarted: async function ({ duration }) {
+    if (!playing || !highlightingEnabled || !activeChunkText) return false
+    await sendMessageToCurrentTab({
+      id: 'highlightChunk',
+      payload: { text: activeChunkText, duration },
+    })
+    return true
   },
   readAloudShortcut: async function () {
     console.log('Handling read aloud shortcut...')
@@ -251,7 +285,11 @@ export const handlers = {
     cancellationToken = true
     queue = []
     playing = false
+    activeChunkText = ''
     updateContextMenus()
+    if (highlightingEnabled) {
+      await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+    }
 
     try {
       await createOffscreenDocument()
@@ -823,6 +861,10 @@ async function setDefaultSettings() {
     volumeGainDb: sync.volumeGainDb || 0,
     autoReadAloud:
       typeof sync.autoReadAloud === 'boolean' ? sync.autoReadAloud : true,
+    highlightSpokenWords:
+      typeof sync.highlightSpokenWords === 'boolean'
+        ? sync.highlightSpokenWords
+        : true,
   })
 }
 
@@ -872,7 +914,7 @@ async function sendMessageToCurrentTab(event) {
     return
   }
 
-  return chrome.tabs.sendMessage(currentTab.id, event)
+  return chrome.tabs.sendMessage(currentTab.id, event).catch(() => {})
 }
 
 // TODO(mike): Ideally use pheonix channels instead of polling.

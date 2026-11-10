@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.0] - 2026-11-10
+
+### Added
+- In-page spoken sentence (`::highlight(chirp-sentence)`) and word (`::highlight(chirp-word)`) highlighting during Read Aloud using the Chromium CSS Custom Highlight API (`src/extension/helpers/highlight-helpers.ts`, `src/extension/content-script.tsx`, `src/extension/offscreen.ts`, `src/extension/service-worker.ts`).
+- Smart auto-scrolling when the active sentence exits the viewport, automatically disengaging if the user scrolls manually until the next Read Aloud session.
+- **Highlight spoken words on page** toggle in `src/extension/components/views/Settings.tsx` (enabled by default), with automatic restoration of the user's original DOM selection when reading finishes or stops.
+
 ## [13.6.3] - 2026-11-10
 
 ### Fixed

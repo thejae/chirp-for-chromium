@@ -35,8 +35,17 @@ const handlers = {
           return
         }
 
+        const duration = audioElement.duration
         audioElement
           .play()
+          .then(() => {
+            chrome.runtime
+              .sendMessage({
+                id: 'chunkPlaybackStarted',
+                payload: { duration },
+              })
+              .catch(() => {})
+          })
           .catch((e) => reject('Error while trying to play audio'))
       }
 
