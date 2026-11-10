@@ -204,6 +204,46 @@ export const handlers = {
 
     return this.readAloud({ text: selection })
   },
+  autoReadOnPopupOpen: async function () {
+    if (playing) return false
+
+    const sync = await chrome.storage.sync.get()
+    if (sync.autoReadAloud === false) return false
+
+    const hasCredentials =
+      (sync.mode === 'free' && Boolean(sync.apiKey)) ||
+      (sync.mode === 'paid' && Boolean(sync.user?.credits))
+    if (!hasCredentials) return false
+
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+      if (
+        !tab?.id ||
+        tab.url?.startsWith('chrome://') ||
+        tab.url?.startsWith('edge://')
+      ) {
+        return false
+      }
+
+      const result = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: retrieveSelection,
+      })
+      const text = result?.[0]?.result?.trim()
+      if (!text) return false
+
+      await appendLog(
+        'INFO',
+        `Auto-reading ${text.length} highlighted characters on popup open`,
+      )
+      return this.readAloud({ text })
+    } catch {
+      return false
+    }
+  },
   stopReading: async function () {
     console.log('Stopping reading...')
     await appendLog('INFO', 'Stopping audio playback')

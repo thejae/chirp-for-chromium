@@ -12,7 +12,11 @@ import { Settings } from './components/views/Settings'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
 import { GitHub } from 'react-feather'
-import { TError, createGithubIssueFromError } from './helpers/error-helpers'
+import {
+  TError,
+  createGithubIssueFromError,
+  isError,
+} from './helpers/error-helpers'
 import { createStore, useStore } from '../hooks/useStore'
 
 export const errorStore = createStore<null | TError>(null)
@@ -33,6 +37,13 @@ export function Extension() {
 
     // Fetch voices in-case the session has become invalid
     chrome.runtime.sendMessage({ id: 'fetchVoices' })
+
+    // Automatically read aloud highlighted text on popup open if enabled in Settings
+    chrome.runtime
+      .sendMessage({ id: 'autoReadOnPopupOpen' })
+      .then((response) => {
+        if (isError(response)) setError(response)
+      })
   })
 
   if (!ready) {

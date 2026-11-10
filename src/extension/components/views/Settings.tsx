@@ -31,11 +31,12 @@ export function Settings() {
                 htmlFor="auto-read-aloud-toggle"
                 className="text-xs font-medium text-neutral-800 cursor-pointer"
               >
-                Auto-read highlighted text
+                Auto-read highlighted text on open
               </label>
               <p className="text-xxs text-neutral-500 leading-relaxed">
-                Automatically read aloud any text you highlight in the browser.
-                Toggle off to read only when triggered manually.
+                Automatically start reading aloud any highlighted text on the
+                active page when you click the extension icon to open this
+                popup.
               </p>
             </div>
             <button

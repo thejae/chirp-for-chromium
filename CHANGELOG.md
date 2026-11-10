@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.1] - 2026-11-10
+
+### Changed
+- Changed **Auto-read highlighted text** (`autoReadAloud`) to trigger only when the extension icon is clicked and the popup opens (`autoReadOnPopupOpen` in `src/extension/service-worker.ts` and `src/extension/extension.tsx`) instead of on every webpage mouse selection.
+
 ## [13.6.0] - 2026-11-10
 
 ### Added
