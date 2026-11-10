@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.9.0] - 2026-11-10
+
+### Added
+- Added visual loading feedback state to in-page text highlighting: when Read Aloud starts and audio is requested from Google Cloud TTS, the selected block displays an animated glowing perimeter pulse (`1.5px` azure outline with soft pulsing shadow aura) in `src/extension/helpers/highlight-helpers.ts`, providing immediate visual confirmation of synthesis in flight before smoothly transitioning into active word-tracking playback. Includes `prefers-reduced-motion` support.
+
 ## [13.8.1] - 2026-11-10
 
 ### Fixed

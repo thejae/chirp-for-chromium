@@ -43,6 +43,7 @@ let searchCursor = 0
 let rafId: number | null = null
 let userScrolled = false
 let sessionActive = false
+let isAudioLoading = false
 let currentSentenceRange: Range | null = null
 let currentWordRange: Range | null = null
 
@@ -63,10 +64,12 @@ function handleUserKeyScroll(event: KeyboardEvent) {
 
 function ensureHighlightStyles() {
   if (typeof document === 'undefined') return
-  if (document.getElementById(STYLE_ELEMENT_ID)) return
-
-  const style = document.createElement('style')
-  style.id = STYLE_ELEMENT_ID
+  let style = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null
+  if (!style) {
+    style = document.createElement('style')
+    style.id = STYLE_ELEMENT_ID
+    ;(document.head || document.documentElement).appendChild(style)
+  }
   style.textContent = `
     ::highlight(${SENTENCE_HIGHLIGHT_NAME}) {
       background-color: rgba(147, 197, 253, 0.38);
@@ -75,8 +78,39 @@ function ensureHighlightStyles() {
       background-color: rgba(250, 204, 21, 0.85);
       color: #000000;
     }
+
+    @keyframes chirpPerimeterPulse {
+      0% {
+        outline-color: rgba(96, 165, 250, 0.35);
+        box-shadow: 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+      100% {
+        outline-color: rgba(147, 197, 253, 0.95);
+        box-shadow: 0 0 10px rgba(96, 165, 250, 0.55);
+      }
+    }
+
+    .chirp-overlay-block {
+      position: fixed;
+      background-color: rgba(59, 130, 246, 0.16);
+      border-radius: 3px;
+      pointer-events: none;
+      transition: outline 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chirp-overlay-block-loading {
+      outline: 1.5px solid rgba(96, 165, 250, 0.85);
+      animation: chirpPerimeterPulse 1.4s infinite ease-in-out alternate;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chirp-overlay-block-loading {
+        animation: none;
+        outline: 1.5px solid rgba(96, 165, 250, 0.75);
+        box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+      }
+    }
   `
-  ;(document.head || document.documentElement).appendChild(style)
 }
 
 function getOrCreateOverlayContainer(): HTMLElement | null {
@@ -110,15 +144,15 @@ function renderOverlayRects() {
     for (const rect of rects) {
       if (rect.width <= 0 || rect.height <= 0) continue
       const el = document.createElement('div')
+      el.className = isAudioLoading
+        ? 'chirp-overlay-block chirp-overlay-block-loading'
+        : 'chirp-overlay-block'
       el.style.cssText = `
         position: fixed;
         left: ${rect.left - 1}px;
         top: ${rect.top - 1}px;
         width: ${rect.width + 2}px;
         height: ${rect.height + 2}px;
-        background-color: rgba(59, 130, 246, 0.16);
-        border-radius: 3px;
-        pointer-events: none;
       `
       container.appendChild(el)
     }
@@ -361,6 +395,7 @@ export function startHighlightSession(payload?: {
   searchCursor = 0
   userScrolled = false
   sessionActive = true
+  isAudioLoading = true
 
   window.addEventListener('wheel', handleUserScroll, { passive: true })
   window.addEventListener('touchmove', handleUserScroll, { passive: true })
@@ -406,6 +441,9 @@ export function highlightChunk({
   cancelActiveAnimation()
 
   if (!sessionActive || !charMap.length || !text) return
+
+  // Playback has begun: clear the loading perimeter animation
+  isAudioLoading = false
 
   const highlights = getCssHighlights()
   const fullDomString = charMap.map((c) => c.char).join('')
@@ -525,4 +563,5 @@ export function endHighlightSession(
   charMap = []
   searchCursor = 0
   sessionActive = false
+  isAudioLoading = false
 }
