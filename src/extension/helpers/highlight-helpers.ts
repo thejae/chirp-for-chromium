@@ -428,37 +428,23 @@ export function startHighlightSession(payload?: {
     selection.removeAllRanges()
   }
 
-  // Immediately highlight the first sentence while audio synthesis is in flight
-  if (payload?.firstChunk) {
-    const domStr = charMap.map((c) => c.char).join('')
-    const { timings } = matchChunkWords(payload.firstChunk, domStr, 0)
-    if (timings.length) {
-      const sentenceRange = createDomRangeFromCharSpan(
-        charMap,
-        timings[0].startIndex,
-        timings[timings.length - 1].endIndex,
-      )
-      if (sentenceRange) {
-        currentSentenceRange = sentenceRange
-        currentWordRange = createDomRangeFromCharSpan(
-          charMap,
-          timings[0].startIndex,
-          timings[0].endIndex,
-        )
-        const highlights = getCssHighlights()
-        const sentenceHighlight = createCustomHighlight(sentenceRange)
-        if (highlights && sentenceHighlight) {
-          highlights.set(SENTENCE_HIGHLIGHT_NAME, sentenceHighlight)
-        }
-        renderOverlayRects()
-      }
+  // Highlight the entire block originally selected by the user for the whole session
+  const fullBlockRange =
+    savedRange || createDomRangeFromCharSpan(charMap, 0, charMap.length)
+  if (fullBlockRange) {
+    currentSentenceRange = fullBlockRange
+    const highlights = getCssHighlights()
+    const blockHighlight = createCustomHighlight(fullBlockRange)
+    if (highlights && blockHighlight) {
+      highlights.set(SENTENCE_HIGHLIGHT_NAME, blockHighlight)
     }
+    renderOverlayRects()
   }
 }
 
 /**
- * Highlights the active sentence chunk and animates the active word highlight
- * across `duration` seconds using `requestAnimationFrame`.
+ * Keeps the entire selected block highlighted and animates the active word
+ * highlight across `duration` seconds using `requestAnimationFrame`.
  */
 export function highlightChunk({
   text,
@@ -482,28 +468,16 @@ export function highlightChunk({
   if (!timings.length) return
   searchCursor = nextCursor
 
-  const sentenceStart = timings[0].startIndex
-  const sentenceEnd = timings[timings.length - 1].endIndex
-  const sentenceRange = createDomRangeFromCharSpan(
-    charMap,
-    sentenceStart,
-    sentenceEnd,
-  )
+  const chunkStart = timings[0].startIndex
+  const chunkEnd = timings[timings.length - 1].endIndex
+  const chunkRange = createDomRangeFromCharSpan(charMap, chunkStart, chunkEnd)
 
-  currentSentenceRange = sentenceRange
   currentWordRange = null
 
-  if (sentenceRange) {
-    if (highlights) {
-      const sentenceHighlight = createCustomHighlight(sentenceRange)
-      if (sentenceHighlight) {
-        highlights.delete(WORD_HIGHLIGHT_NAME)
-        highlights.set(SENTENCE_HIGHLIGHT_NAME, sentenceHighlight)
-      }
-    }
-    autoScrollToRangeIfNeeded(sentenceRange)
-    renderOverlayRects()
+  if (chunkRange) {
+    autoScrollToRangeIfNeeded(chunkRange)
   }
+  renderOverlayRects()
 
   const totalDurationMs =
     Number.isFinite(duration) && duration > 0

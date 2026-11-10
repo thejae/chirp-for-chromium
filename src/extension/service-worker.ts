@@ -375,28 +375,87 @@ export const handlers = {
         ? 'MP3'
         : encoding
 
+    const rawContent = text || ssml || ''
+    const hasCjk = /[\u3400-\u9fff]/.test(rawContent)
+    let voiceLanguageCode = sync.language || 'en-US'
+    let voiceName = getCurrentVoice(session, sync)
+
+    // Non-CJK Chirp3/Journey voices (such as en-US-Chirp3-HD-*) reject Chinese
+    // ideographs with `Sentence starting with: "⟪..." is too long`. Automatically
+    // switch to a Mandarin voice for chunks containing Chinese characters.
+    if (hasCjk && !/^(cmn|zh|yue|ja|ko)-/i.test(voiceLanguageCode)) {
+      voiceLanguageCode = 'cmn-CN'
+      const persona = voiceName?.includes('-Chirp3-HD-')
+        ? voiceName.split('-Chirp3-HD-')[1]
+        : null
+      const candidateChirp = persona ? `cmn-CN-Chirp3-HD-${persona}` : null
+      const availableNames = new Set(
+        (session.voices || []).map((v: any) => v.name),
+      )
+
+      if (candidateChirp && availableNames.has(candidateChirp)) {
+        voiceName = candidateChirp
+      } else if (sync.voices?.['cmn-CN']) {
+        voiceName = sync.voices['cmn-CN']
+      } else if (availableNames.has('cmn-CN-Wavenet-A')) {
+        voiceName = 'cmn-CN-Wavenet-A'
+      } else {
+        voiceName = candidateChirp || 'cmn-CN-Wavenet-A'
+      }
+    }
+
+    const buildRequestBody = (overrideVoice?: string, overrideLang?: string) =>
+      JSON.stringify({
+        text: text,
+        ssml: ssml,
+        voice_name: overrideVoice || voiceName,
+        voice_language_code: overrideLang || voiceLanguageCode,
+        audio_pitch: sync.pitch,
+        audio_speaking_rate: sync.speed,
+        audio_volume_gain_db: sync.volumeGainDb,
+        audio_encoding: apiEncoding,
+        audio_profile:
+          sync.audioProfile !== 'default' ? [sync.audioProfile] : undefined,
+        extension_version: chrome.runtime.getManifest().version,
+      })
+
     try {
-      const response = await loggedFetch(url, {
+      let response = await loggedFetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          text: text,
-          ssml: ssml,
-          voice_name: getCurrentVoice(session, sync),
-          voice_language_code: sync.language,
-          audio_pitch: sync.pitch,
-          audio_speaking_rate: sync.speed,
-          audio_volume_gain_db: sync.volumeGainDb,
-          audio_encoding: apiEncoding,
-          audio_profile:
-            sync.audioProfile !== 'default' ? [sync.audioProfile] : undefined,
-          extension_version: chrome.runtime.getManifest().version,
-        }),
+        body: buildRequestBody(),
       })
 
       if (!response.ok) {
         console.log('Failed to synthesize text', response)
-        const message = (await response.json()).error?.message
+        let message = (await response.json()).error?.message
+
+        // If a Chirp3/Journey voice rejects the chunk due to its internal token
+        // limit ("sentences that are too long"), retry once with a standard
+        // WaveNet voice which handles arbitrary multi-script strings cleanly.
+        if (
+          typeof message === 'string' &&
+          message.includes('sentences that are too long')
+        ) {
+          const fallbackLang = hasCjk ? 'cmn-CN' : voiceLanguageCode
+          const fallbackVoice = hasCjk
+            ? 'cmn-CN-Wavenet-A'
+            : `${fallbackLang.split('-').slice(0, 2).join('-')}-Wavenet-A`
+
+          await appendLog(
+            'WARN',
+            `Chirp3 rejected sentence length; retrying chunk with ${fallbackVoice}`,
+          )
+          response = await loggedFetch(url, {
+            method: 'POST',
+            headers,
+            body: buildRequestBody(fallbackVoice, fallbackLang),
+          })
+          if (response.ok) {
+            return (await response.json()).audioContent
+          }
+          message = (await response.json()).error?.message
+        }
 
         if (message === 'API key not valid. Please pass a valid API key.') {
           const error = createError({
