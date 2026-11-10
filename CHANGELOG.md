@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.3] - 2026-11-10
+
+### Fixed
+- Fixed Microsoft Edge installing a duplicate copy of the unpacked extension and resetting saved preferences on reload by always preserving the deterministic manifest `key` in `src/extension/manifest.ts` across both development and production Edge builds.
+
 ## [13.6.2] - 2026-11-10
 
 ### Fixed

@@ -1,23 +1,22 @@
 const isEdge = process.env.BROWSER === 'edge'
-const isEdgeStoreBuild = isEdge && process.env.ENVIRONMENT === 'production'
 
 /**
  * WebExtension Manifest V3 configuration supporting both Google Chrome and
- * Microsoft Edge (local unpacked & Edge Add-ons store).
+ * Microsoft Edge.
  *
- * - `oauth2` is omitted on Edge builds because Edge does not support the
- *   Chrome-only `oauth2` manifest key (and displays a manifest warning);
- *   OAuth on Edge uses `chrome.identity.launchWebAuthFlow` instead.
- * - `key` is omitted on production Edge store builds because Microsoft Partner
- *   Center rejects packages containing a hardcoded public `key`, while keeping
- *   it in local development preserves the extension ID for OAuth redirect URIs.
+ * - `key` is always preserved in `dist/manifest.json` so unpacked builds in
+ *   Edge and Chrome keep a single deterministic Extension ID (`iefankigbnlnlaolflbcopliocibkffc`),
+ *   preventing Edge from installing a duplicate extension or resetting
+ *   `chrome.storage.sync` preferences on reload.
+ * - `oauth2` is omitted on Edge builds because Edge uses
+ *   `chrome.identity.launchWebAuthFlow` instead of the Chrome-only `oauth2` key.
  */
 export default {
   name: 'Chirp3 for Chromium',
   description:
     'Transforms highlighted text into high-quality natural sounding audio using Google Cloud Text-to-Speech.',
   version: process.env.npm_package_version,
-  ...(!isEdgeStoreBuild && { key: process.env.GOOGLE_CHROME_EXTENSION_KEY }),
+  key: process.env.GOOGLE_CHROME_EXTENSION_KEY,
   manifest_version: 3,
   permissions: [
     'contextMenus',
