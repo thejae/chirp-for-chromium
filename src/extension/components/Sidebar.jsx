@@ -31,7 +31,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="Extension navigation"
-      className="flex flex-col w-44 shrink-0 p-2 py-2.5 border-r border-neutral-200 bg-white/80"
+      className="flex flex-col w-44 shrink-0 p-2 py-2.5 border-r border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/90"
     >
       <div className="flex items-center mb-3.5 px-2 pt-0.5">
         <img
@@ -41,10 +41,10 @@ export function Sidebar() {
           style={{ width: '24px', height: '24px' }}
         />
         <div className="leading-tight text-left">
-          <div className="text-sm font-bold text-neutral-900 tracking-tight">
+          <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             Chirp3
           </div>
-          <div className="text-xxs font-medium text-neutral-500 -mt-0.5">
+          <div className="text-xxs font-medium text-neutral-500 dark:text-neutral-400 -mt-0.5">
             for Chromium
           </div>
         </div>
@@ -87,7 +87,7 @@ export function Sidebar() {
         </Sidebar.Item>
       </div>
 
-      <div className="mt-auto pt-2 border-t border-neutral-200/80 flex flex-col gap-0.5">
+      <div className="mt-auto pt-2 border-t border-neutral-200/80 dark:border-neutral-800 flex flex-col gap-0.5">
         <Sidebar.Item
           Icon={HelpCircle}
           color="bg-neutral-500"
@@ -143,7 +143,7 @@ Sidebar.Item = function Item({
         rel="noopener noreferrer"
         className={twMerge(
           'px-1.5 py-1.5 flex items-center group text-xs font-medium rounded-md cursor-pointer transition-colors w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-          'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80',
+          'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800/80',
         )}
       >
         <div className={`p-1 rounded mr-2 text-white shrink-0 ${color}`}>
@@ -163,9 +163,12 @@ Sidebar.Item = function Item({
       onClick={onClick || handleClick}
       className={twMerge(
         'px-1.5 py-1.5 flex items-center group text-xs font-medium rounded-md cursor-pointer transition-colors w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-        !active && 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80',
-        active && 'bg-neutral-200/75 text-neutral-900 font-semibold',
-        disabled && 'opacity-45 cursor-not-allowed hover:bg-transparent hover:text-neutral-600',
+        !active &&
+          'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800/80',
+        active &&
+          'bg-neutral-200/75 text-neutral-900 font-semibold dark:bg-neutral-800 dark:text-neutral-100',
+        disabled &&
+          'opacity-45 cursor-not-allowed hover:bg-transparent hover:text-neutral-600 dark:hover:bg-transparent dark:hover:text-neutral-400',
       )}
     >
       <div className={`p-1 rounded mr-2 text-white shrink-0 ${color}`}>

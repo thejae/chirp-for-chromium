@@ -63,13 +63,13 @@ export function MiniPlayer() {
   return (
     <section
       aria-label="Now playing audio controls"
-      className="shrink-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] px-3.5 py-2 flex flex-col gap-1.5"
+      className="shrink-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-t border-neutral-200/90 dark:border-neutral-800 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.3)] px-3.5 py-2 flex flex-col gap-1.5"
     >
       {/* Progress track when playing */}
       {isPlaying && totalChunks > 0 && (
-        <div className="w-full h-1 bg-neutral-200 rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
+            className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-300 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -87,7 +87,7 @@ export function MiniPlayer() {
             title={
               isPlaying ? (isPaused ? 'Resume reading' : 'Pause reading') : 'Read highlighted text'
             }
-            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white flex items-center justify-center transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white flex items-center justify-center transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-neutral-900"
           >
             {isPlaying && !isPaused ? (
               <Pause size={14} className="fill-current" />
@@ -102,7 +102,7 @@ export function MiniPlayer() {
             disabled={!isPlaying}
             aria-label="Stop reading"
             title="Stop reading"
-            className="h-8 w-8 rounded-full text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="h-8 w-8 rounded-full text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 dark:active:bg-neutral-700 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <Square size={13} className="fill-current" />
           </button>
@@ -112,14 +112,14 @@ export function MiniPlayer() {
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           {isPlaying ? (
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 text-xxs font-medium text-neutral-500">
+              <div className="flex items-center gap-1.5 text-xxs font-medium text-neutral-500 dark:text-neutral-400">
                 <span
                   className={`inline-block h-1.5 w-1.5 rounded-full ${
-                    isPaused ? 'bg-amber-500' : 'bg-blue-600 animate-pulse'
+                    isPaused ? 'bg-amber-500' : 'bg-blue-600 dark:bg-blue-400 animate-pulse'
                   }`}
                   aria-hidden="true"
                 />
-                <span className="font-semibold text-neutral-700 tracking-tight">
+                <span className="font-semibold text-neutral-700 dark:text-neutral-200 tracking-tight">
                   {isPaused ? 'PAUSED' : 'READING'}
                 </span>
                 {totalChunks > 0 && (
@@ -129,18 +129,18 @@ export function MiniPlayer() {
                 )}
               </div>
               <p
-                className="text-xs text-neutral-800 truncate font-normal leading-tight mt-0.5"
+                className="text-xs text-neutral-800 dark:text-neutral-100 truncate font-normal leading-tight mt-0.5"
                 title={activeText}
               >
                 {activeText ? `“${activeText}”` : 'Synthesizing speech…'}
               </p>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-              <Volume2 size={14} className="text-neutral-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              <Volume2 size={14} className="text-neutral-400 dark:text-neutral-500 shrink-0" />
               <span className="truncate">
                 Ready to read · Highlight text or press{' '}
-                <kbd className="px-1 py-0.5 text-xxs font-mono bg-neutral-100 border border-neutral-300 rounded text-neutral-700 shadow-2xs">
+                <kbd className="px-1 py-0.5 text-xxs font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded text-neutral-700 dark:text-neutral-300 shadow-2xs">
                   Ctrl+Shift+S
                 </kbd>
               </span>
@@ -154,11 +154,11 @@ export function MiniPlayer() {
           onClick={() => navigate('/preferences')}
           aria-label="Change voice and speech settings"
           title="Change voice and speech settings"
-          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xxs font-medium bg-neutral-100 hover:bg-neutral-200/80 active:bg-neutral-200 text-neutral-700 border border-neutral-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xxs font-medium bg-neutral-100 hover:bg-neutral-200/80 active:bg-neutral-200 text-neutral-700 border border-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:active:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
-          <Sliders size={11} className="text-neutral-500" />
+          <Sliders size={11} className="text-neutral-500 dark:text-neutral-400" />
           <span className="truncate max-w-[90px]">{displayVoiceName}</span>
-          <span className="text-neutral-400">·</span>
+          <span className="text-neutral-400 dark:text-neutral-500">·</span>
           <span>{speed}×</span>
         </button>
       </div>

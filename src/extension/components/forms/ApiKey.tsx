@@ -18,13 +18,13 @@ ApiKeyForm.Content = function ({ form, sync, setSync }) {
         value={sync.apiKey}
         onChange={(apiKey) => setSync({ ...sync, apiKey, apiKeyValid: false })}
       />
-      <div className="flex items-center justify-between text-xxs text-neutral-500 px-0.5">
+      <div className="flex items-center justify-between text-xxs text-neutral-500 dark:text-neutral-400 px-0.5">
         <span className="flex items-center gap-1">
-          <Lock size={11} className="shrink-0 text-neutral-400" />
+          <Lock size={11} className="shrink-0 text-neutral-400 dark:text-neutral-500" />
           Stored locally in your browser sync storage.
         </span>
         {sync.apiKeyValid && !form.error && (
-          <span className="flex items-center gap-1 text-emerald-700 font-medium">
+          <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
             <CheckCircle size={11} />
             Verified
           </span>

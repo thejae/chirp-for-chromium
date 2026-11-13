@@ -13,11 +13,11 @@ export const Notice = () => {
   }
 
   return (
-    <div className="flex flex-col gap-2.5 text-xs leading-relaxed text-neutral-700">
+    <div className="flex flex-col gap-2.5 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
       <p>
         Chirp3 for Chromium is an{' '}
         <a
-          className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2"
+          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2"
           href="https://github.com/thejae/chirp-for-chromium"
           target="_blank"
           rel="noreferrer"
@@ -27,11 +27,11 @@ export const Notice = () => {
         powered by Google Cloud Text-to-Speech. Purchase prepaid credits for
         one-click setup, or connect your own Google Cloud API key.
       </p>
-      <p className="text-neutral-600">
+      <p className="text-neutral-600 dark:text-neutral-400">
         Already purchased credits?{' '}
         <button
           type="button"
-          className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+          className="cursor-pointer text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           onClick={handleAuthentication}
         >
           Re-sync your account
@@ -43,12 +43,12 @@ export const Notice = () => {
 }
 
 export const FreeNotice = () => (
-  <div className="flex flex-col gap-1.5 mb-3 text-xs leading-relaxed text-neutral-700">
+  <div className="flex flex-col gap-1.5 mb-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
     <p>
       Enter your Google Cloud API key to synthesize speech using your own Google
       Cloud project. Follow the{' '}
       <a
-        className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2"
+        className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2"
         href="https://www.youtube.com/watch?v=1n8xlVNWEZ0"
         target="_blank"
         rel="noreferrer"
@@ -61,12 +61,12 @@ export const FreeNotice = () => (
 )
 
 export const HowToUseTip = () => (
-  <div className="bg-blue-50/70 border border-blue-200/80 rounded-md px-3 py-2 text-xxs text-blue-900 leading-relaxed">
+  <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 rounded-md px-3 py-2 text-xxs text-blue-900 dark:text-blue-200 leading-relaxed">
     <span className="font-semibold">How to read any webpage:</span> Highlight
     text on any page and right-click → <span className="font-semibold">Read aloud</span>, or press{' '}
-    <kbd className="px-1 py-0.5 bg-white border border-blue-200 rounded font-mono text-xxs">
+    <kbd className="px-1 py-0.5 bg-white dark:bg-neutral-900 border border-blue-200 dark:border-blue-800 rounded font-mono text-xxs">
       Ctrl+Shift+S
     </kbd>{' '}
-    (<kbd className="px-1 py-0.5 bg-white border border-blue-200 rounded font-mono text-xxs">⌘+Shift+S</kbd> on Mac).
+    (<kbd className="px-1 py-0.5 bg-white dark:bg-neutral-900 border border-blue-200 dark:border-blue-800 rounded font-mono text-xxs">⌘+Shift+S</kbd> on Mac).
   </div>
 )

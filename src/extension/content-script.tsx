@@ -8,6 +8,7 @@ import { SelectionToolbar } from './components/player/SelectionToolbar'
 import { Button } from '../components/Button'
 import { useMount } from '../hooks/useMount'
 import { useSync } from '../hooks/useSync'
+import { useTheme } from '../hooks/useTheme'
 import {
   TError,
   createGithubIssueFromError,
@@ -105,6 +106,7 @@ if (document.readyState === 'loading') {
 // React component -------------------------------------------------------------
 function ContentScript() {
   const { sync, ready } = useSync()
+  const { isDark } = useTheme(sync.theme)
   const [error, setError] = useState<null | TError>(null)
 
   useMount(function () {
@@ -157,9 +159,9 @@ function ContentScript() {
   }
 
   return (
-    <>
+    <div className={isDark ? 'dark' : undefined}>
       <SelectionToolbar enabled={showSelectionToolbar} onError={setError} />
       {errorDialog}
-    </>
+    </div>
   )
 }

@@ -36,7 +36,7 @@ export function Button({
       disabled={submitting || disabled}
       className={twMerge(
         buttonColorMap[type],
-        'flex items-center justify-center rounded-md px-3.5 py-2 select-none border text-xs font-medium shadow-sm w-full relative transition-all duration-150 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
+        'flex items-center justify-center rounded-md px-3.5 py-2 select-none border text-xs font-medium shadow-sm w-full relative transition-all duration-150 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-neutral-900',
         (submitting || disabled) && 'opacity-50 cursor-not-allowed active:scale-100',
         className,
       )}
@@ -66,11 +66,11 @@ export function Button({
 
 const buttonColorMap = {
   default:
-    'bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900',
+    'bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 dark:bg-neutral-800 dark:border-neutral-700 dark:hover:bg-neutral-700/80 dark:text-neutral-200 dark:hover:text-white',
   primary:
-    'bg-blue-600 text-white border-blue-700 hover:bg-blue-700',
+    'bg-blue-600 text-white border-blue-700 hover:bg-blue-700 dark:border-blue-500',
   secondary:
-    'bg-neutral-100 border-neutral-200 text-neutral-700 hover:bg-neutral-200',
+    'bg-neutral-100 border-neutral-200 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-700',
   danger:
     'bg-red-600 text-white border-red-700 hover:bg-red-700',
   success:

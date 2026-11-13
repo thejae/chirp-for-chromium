@@ -78,7 +78,7 @@ export function Dialog({
   return (
     <div
       style={{ zIndex: Number.MAX_SAFE_INTEGER }}
-      className="fixed flex w-full h-screen justify-center items-center left-0 top-0 bg-neutral-900/30 backdrop-blur-sm p-4"
+      className="fixed flex w-full h-screen justify-center items-center left-0 top-0 bg-neutral-900/30 dark:bg-black/60 backdrop-blur-sm p-4"
       {...args}
     >
       <div
@@ -90,17 +90,17 @@ export function Dialog({
           dialogRef.current = node
           outsideClickRef.current = node
         }}
-        className="border border-neutral-200 bg-white h-fit rounded-xl shadow-xl animate-popup"
+        className="border border-neutral-200 dark:border-neutral-700/80 bg-white dark:bg-neutral-900 h-fit rounded-xl shadow-xl animate-popup"
       >
         <div className="flex px-6 pt-5 pb-0">
           <div className="w-full">
             <h1
               id={titleId}
-              className="text-base mb-2.5 tracking-tight text-neutral-900 font-semibold"
+              className="text-base mb-2.5 tracking-tight text-neutral-900 dark:text-neutral-100 font-semibold"
             >
               {title}
             </h1>
-            <div className="text-xs leading-relaxed text-neutral-600 break-words">
+            <div className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-300 break-words">
               {content}
             </div>
           </div>

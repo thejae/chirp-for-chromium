@@ -175,7 +175,7 @@ export function Dropdown(props) {
     >
       <label
         htmlFor={inputId}
-        className="bg-white absolute text-xxs font-medium -top-2 left-2 px-1 text-neutral-600 z-10 pointer-events-none"
+        className="bg-white dark:bg-neutral-900 absolute text-xxs font-medium -top-2 left-2 px-1 text-neutral-600 dark:text-neutral-400 z-10 pointer-events-none"
       >
         {props.label}
       </label>
@@ -207,7 +207,7 @@ export function Dropdown(props) {
             open && options[index] ? `${listboxId}-opt-${index}` : undefined
           }
           type="text"
-          className="border border-neutral-200 h-9 pl-3 pr-7 py-1 outline-none rounded-md w-full text-neutral-900 bg-white transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 truncate"
+          className="border border-neutral-200 dark:border-neutral-700 h-9 pl-3 pr-7 py-1 outline-none rounded-md w-full text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900 dark:placeholder:text-neutral-500 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:focus:border-blue-400 dark:focus:ring-blue-400/20 truncate"
           placeholder={props.placeholder}
           value={displayValue}
           onChange={handleChange}
@@ -220,8 +220,8 @@ export function Dropdown(props) {
           size={14}
           aria-hidden="true"
           className={twMerge(
-            'absolute right-2.5 text-neutral-400 pointer-events-none transition-transform duration-150',
-            open && 'rotate-180 text-blue-600',
+            'absolute right-2.5 text-neutral-400 dark:text-neutral-500 pointer-events-none transition-transform duration-150',
+            open && 'rotate-180 text-blue-600 dark:text-blue-400',
           )}
         />
       </div>
@@ -246,7 +246,7 @@ function Options(props) {
       id={props.id}
       role="listbox"
       ref={handleRef}
-      className="absolute top-10 left-0 w-full z-30 rounded-md border border-neutral-200 bg-white shadow-lg overflow-y-auto overflow-x-hidden"
+      className="absolute top-10 left-0 w-full z-30 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg overflow-y-auto overflow-x-hidden"
       onMouseEnter={props.onMouseEnter}
       style={{ overscrollBehavior: 'none' }}
     >
@@ -278,10 +278,14 @@ function Option(props) {
       aria-disabled={props.option.disabled}
       className={twMerge(
         'flex flex-col px-2.5 py-1.5 m-1 rounded cursor-pointer transition-colors',
-        !props.selected && 'hover:bg-neutral-100 text-neutral-800',
-        props.selected && 'bg-blue-50 text-blue-900 font-semibold',
-        props.focused && !props.selected && 'bg-neutral-100',
-        props.focused && props.selected && 'bg-blue-100/80',
+        !props.selected &&
+          'hover:bg-neutral-100 text-neutral-800 dark:hover:bg-neutral-800 dark:text-neutral-200',
+        props.selected &&
+          'bg-blue-50 text-blue-900 font-semibold dark:bg-blue-950/70 dark:text-blue-200',
+        props.focused && !props.selected && 'bg-neutral-100 dark:bg-neutral-800',
+        props.focused &&
+          props.selected &&
+          'bg-blue-100/80 dark:bg-blue-900/60',
         props.option.disabled && 'opacity-60 cursor-default',
       )}
       onClick={handleClick}
@@ -291,7 +295,7 @@ function Option(props) {
     >
       <span className="truncate">{props.option.title}</span>
       {props.option.description && (
-        <span className="text-xxs text-neutral-500 font-normal truncate">
+        <span className="text-xxs text-neutral-500 dark:text-neutral-400 font-normal truncate">
           {props.option.description}
         </span>
       )}

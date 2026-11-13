@@ -138,7 +138,7 @@ export function Preferences() {
 
   if (!sessionReady || !syncReady) {
     return (
-      <div className="text-xs text-neutral-500 py-6 text-center">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400 py-6 text-center">
         Loading voice preferences…
       </div>
     )
@@ -205,16 +205,16 @@ export function Preferences() {
     <div className="flex flex-col gap-4">
       <div>
         <div className="flex items-center justify-between mb-2 ml-0.5">
-          <h2 className="text-sm font-semibold text-neutral-800 tracking-tight">
+          <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight">
             Voice & speech
           </h2>
           {selectedVoiceOption && (
-            <span className="text-xxs text-neutral-500 font-medium">
+            <span className="text-xxs text-neutral-500 dark:text-neutral-400 font-medium">
               {selectedVoiceOption.title} · {selectedVoiceOption.description}
             </span>
           )}
         </div>
-        <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3.5">
+        <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3.5">
           <div className="grid grid-cols-2 gap-3">
             <Dropdown
               label="Language"
@@ -256,9 +256,9 @@ export function Preferences() {
             ticks={[0.5, 1, 1.5, 2, 2.5, 3]}
           />
 
-          <div className="flex items-center justify-between pt-1 border-t border-neutral-100">
-            <span className="flex items-center gap-1.5 text-xxs text-neutral-500">
-              <Volume2 size={13} className="text-neutral-400 shrink-0" />
+          <div className="flex items-center justify-between pt-1 border-t border-neutral-100 dark:border-neutral-800">
+            <span className="flex items-center gap-1.5 text-xxs text-neutral-500 dark:text-neutral-400">
+              <Volume2 size={13} className="text-neutral-400 dark:text-neutral-500 shrink-0" />
               Audition current voice, speed, and pitch
             </span>
             <Button
@@ -278,13 +278,13 @@ export function Preferences() {
           type="button"
           aria-expanded={showAdvanced}
           onClick={() => setShowAdvanced((v) => !v)}
-          className="w-full flex items-center justify-between bg-white px-3.5 py-2.5 rounded-lg shadow-sm border border-neutral-200 text-left hover:bg-neutral-50/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="w-full flex items-center justify-between bg-white dark:bg-neutral-900 px-3.5 py-2.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 text-left hover:bg-neutral-50/80 dark:hover:bg-neutral-800/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <div>
-            <div className="text-xs font-semibold text-neutral-800">
+            <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-100">
               Advanced audio & format settings
             </div>
-            <div className="text-xxs text-neutral-500">
+            <div className="text-xxs text-neutral-500 dark:text-neutral-400">
               Pitch ({sync.pitch > 0 ? `+${sync.pitch}` : sync.pitch}), Volume (
               {sync.volumeGainDb > 0
                 ? `+${sync.volumeGainDb}`
@@ -294,14 +294,14 @@ export function Preferences() {
           </div>
           <ChevronDown
             size={15}
-            className={`text-neutral-500 transition-transform duration-150 ${
+            className={`text-neutral-500 dark:text-neutral-400 transition-transform duration-150 ${
               showAdvanced ? 'rotate-180' : ''
             }`}
           />
         </button>
 
         {showAdvanced && (
-          <div className="mt-2 bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-4">
+          <div className="mt-2 bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
             <Dropdown
               label="Device EQ profile"
               value={sync.audioProfile}
@@ -337,7 +337,7 @@ export function Preferences() {
               ticks={[-16, -8, 0, 8, 16]}
             />
 
-            <div className="grid gap-3 grid-cols-2 pt-2 border-t border-neutral-100">
+            <div className="grid gap-3 grid-cols-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
               <Dropdown
                 label="Download format"
                 value={
@@ -380,10 +380,10 @@ export function Preferences() {
       </div>
 
       <div>
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight mb-2 ml-0.5">
           Page actions & shortcuts
         </h2>
-        <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3">
+        <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3">
           <div className="flex gap-2">
             <Button
               type={isPlaying ? 'danger' : 'primary'}
@@ -400,21 +400,21 @@ export function Preferences() {
               Download {downloadFormatExt}
             </Button>
           </div>
-          <div className="flex items-center justify-between gap-3 pt-2 border-t border-neutral-100">
-            <div className="flex flex-col gap-1 text-xxs text-neutral-600">
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="flex flex-col gap-1 text-xxs text-neutral-600 dark:text-neutral-400">
               <div>
-                <span className="font-medium text-neutral-800">
+                <span className="font-medium text-neutral-800 dark:text-neutral-200">
                   Read aloud shortcut:
                 </span>{' '}
-                <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded font-mono">
+                <kbd className="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded font-mono text-neutral-700 dark:text-neutral-300">
                   {isMac ? '⌘+Shift+S' : 'Ctrl+Shift+S'}
                 </kbd>
               </div>
               <div>
-                <span className="font-medium text-neutral-800">
+                <span className="font-medium text-neutral-800 dark:text-neutral-200">
                   Download {downloadFormatExt} shortcut:
                 </span>{' '}
-                <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded font-mono">
+                <kbd className="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded font-mono text-neutral-700 dark:text-neutral-300">
                   {isMac ? '⌘+Shift+E' : 'Ctrl+Shift+E'}
                 </kbd>
               </div>

@@ -33,18 +33,25 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      const isSystemDark =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-color-scheme: dark)').matches
+      const isDark =
+        typeof document !== 'undefined' &&
+        (document.documentElement.classList.contains('dark') || isSystemDark)
+
       return (
         <div
           style={{ width: 586, height: 550 }}
-          className="bg-neutral-50 p-6 flex flex-col items-center justify-center text-center text-neutral-800"
+          className={`${isDark ? 'dark ' : ''}bg-neutral-50 dark:bg-neutral-950 p-6 flex flex-col items-center justify-center text-center text-neutral-800 dark:text-neutral-100`}
         >
-          <div className="h-12 w-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-3">
+          <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center mb-3">
             <AlertTriangle size={24} />
           </div>
-          <h1 className="text-sm font-bold text-neutral-900 mb-1">
+          <h1 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-1">
             Something went wrong
           </h1>
-          <p className="text-xs text-neutral-500 max-w-xs mb-4 leading-relaxed">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs mb-4 leading-relaxed">
             {this.state.error?.message ||
               'An unexpected error occurred while rendering the extension.'}
           </p>

@@ -6,10 +6,10 @@ import { useSession } from '../../../hooks/useSession.js'
 import { LogEntry, LogLevel } from '../../helpers/log-helpers.js'
 
 const levelBadgeStyles: Record<LogLevel, string> = {
-  INFO: 'bg-neutral-200/80 text-neutral-700',
-  API: 'bg-blue-100 text-blue-800',
-  WARN: 'bg-amber-100 text-amber-800',
-  ERROR: 'bg-red-100 text-red-800',
+  INFO: 'bg-neutral-200/80 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
+  API: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
+  WARN: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+  ERROR: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
 }
 
 /**
@@ -22,7 +22,7 @@ export function Logs() {
 
   if (!ready) {
     return (
-      <div className="text-xs text-neutral-500 py-6 text-center">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400 py-6 text-center">
         Loading logs…
       </div>
     )
@@ -58,17 +58,17 @@ export function Logs() {
   return (
     <div className="h-full flex flex-col gap-2.5">
       <div className="ml-0.5">
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight">
           Extension & API Log
         </h2>
-        <p className="text-xxs text-neutral-500">
+        <p className="text-xxs text-neutral-500 dark:text-neutral-400">
           Verbose runtime events and redacted API request/response activity
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col grow overflow-y-auto font-mono text-xxs divide-y divide-neutral-100">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col grow overflow-y-auto font-mono text-xxs divide-y divide-neutral-100 dark:divide-neutral-800">
         {logs.length === 0 ? (
-          <div className="m-auto p-6 text-center font-sans text-xs text-neutral-500">
+          <div className="m-auto p-6 text-center font-sans text-xs text-neutral-500 dark:text-neutral-400">
             No log entries recorded yet. Trigger a voice preview, read aloud, or
             API action to inspect activity here.
           </div>
@@ -86,10 +86,10 @@ export function Logs() {
             return (
               <div
                 key={entry.id}
-                className="px-3 py-2 flex flex-col gap-1 hover:bg-neutral-50/80"
+                className="px-3 py-2 flex flex-col gap-1 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50"
               >
                 <div className="flex items-start gap-2">
-                  <span className="text-neutral-400 tabular-nums shrink-0">
+                  <span className="text-neutral-400 dark:text-neutral-500 tabular-nums shrink-0">
                     {timePart}
                   </span>
                   <span
@@ -100,16 +100,16 @@ export function Logs() {
                   >
                     {entry.level}
                   </span>
-                  <span className="text-neutral-800 break-all leading-snug">
+                  <span className="text-neutral-800 dark:text-neutral-200 break-all leading-snug">
                     {entry.message}
                   </span>
                 </div>
                 {entry.details && (
                   <details className="mt-0.5">
-                    <summary className="cursor-pointer select-none font-sans text-[11px] font-medium text-neutral-500 hover:text-neutral-800 w-fit">
+                    <summary className="cursor-pointer select-none font-sans text-[11px] font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 w-fit">
                       {summaryLabel}
                     </summary>
-                    <pre className="mt-1 p-2 rounded bg-neutral-50 border border-neutral-200/70 text-neutral-600 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+                    <pre className="mt-1 p-2 rounded bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/70 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
                       {entry.details}
                     </pre>
                   </details>

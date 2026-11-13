@@ -279,7 +279,7 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
       }}
       className={`${transformClass} animate-popup select-none`}
     >
-      <div className="bg-neutral-900 text-white rounded-3xl shadow-xl border border-neutral-700/80 overflow-hidden whitespace-nowrap">
+      <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md text-neutral-900 dark:text-white rounded-3xl shadow-lg dark:shadow-xl border border-neutral-200/90 dark:border-neutral-700/80 overflow-hidden whitespace-nowrap">
         <div className="flex items-center gap-1 px-1.5 py-1">
           {!isPlaying ? (
             <button
@@ -312,7 +312,7 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
                 onClick={handleStop}
                 aria-label="Stop reading"
                 title="Stop reading"
-                className="h-6 w-6 rounded-full bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-600 text-neutral-200 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="h-6 w-6 rounded-full bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 text-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:active:bg-neutral-600 dark:text-neutral-200 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
               >
                 <Square size={10} className="fill-current shrink-0" />
               </button>
@@ -320,7 +320,7 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
           )}
 
           <div
-            className="w-px h-3.5 bg-neutral-700 mx-0.5"
+            className="w-px h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5"
             aria-hidden="true"
           />
 
@@ -330,7 +330,7 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
             disabled={downloading}
             aria-label="Download selected text as audio"
             title="Download audio"
-            className="h-6 w-6 rounded-full hover:bg-neutral-800 active:bg-neutral-700 text-neutral-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="h-6 w-6 rounded-full hover:bg-neutral-100 active:bg-neutral-200 text-neutral-600 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:active:bg-neutral-700 dark:text-neutral-300 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             {downloading ? (
               <Loader size={12} className="animate-spin shrink-0" />
@@ -342,7 +342,7 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
 
         {/* Full-selection reading progress bar */}
         <div
-          className="h-[2px] w-full bg-neutral-800"
+          className="h-[2px] w-full bg-neutral-200 dark:bg-neutral-800"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}

@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useSync } from '../hooks/useSync'
 import { useMount } from '../hooks/useMount'
+import { useTheme } from '../hooks/useTheme'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
 import { Billing } from './components/views/Billing'
@@ -30,7 +31,12 @@ export const errorStore = createStore<null | TError>(null)
 export function Extension() {
   const navigate = useNavigate()
   const { sync, ready } = useSync()
+  const { isDark } = useTheme(sync.theme)
   const [error, setError] = useStore(errorStore)
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
 
   useMount(() => {
     // Default to the Voice & speech tab whenever the popup opens
@@ -51,7 +57,7 @@ export function Extension() {
     return (
       <div
         style={{ width: 586, height: 550 }}
-        className="bg-neutral-50 flex items-center justify-center text-xs text-neutral-500"
+        className={`${isDark ? 'dark ' : ''}bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center text-xs text-neutral-500 dark:text-neutral-400`}
       >
         Loading extension…
       </div>
@@ -61,11 +67,11 @@ export function Extension() {
   return (
     <div
       style={{ width: 586, height: 550 }}
-      className="bg-neutral-50 flex text-neutral-800"
+      className={`${isDark ? 'dark ' : ''}bg-neutral-50 dark:bg-neutral-950 flex text-neutral-800 dark:text-neutral-100`}
     >
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 p-4 overflow-y-auto bg-neutral-100/60">
+        <main className="flex-1 p-4 overflow-y-auto bg-neutral-100/60 dark:bg-neutral-950">
           <Routes>
             <Route path="/preferences" element={<Preferences />} />
             <Route path="/sandbox" element={<Sandbox />} />

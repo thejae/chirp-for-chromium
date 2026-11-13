@@ -23,6 +23,11 @@
   color: #fff;
 }
 
+.dark {
+  color-scheme: dark;
+  color: #e5e5e5;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -39,6 +44,14 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a3a3a3;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #525252;
 }
 
 @media (prefers-reduced-motion: reduce) {

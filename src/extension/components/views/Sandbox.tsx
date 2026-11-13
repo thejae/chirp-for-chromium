@@ -27,7 +27,7 @@ export function Sandbox() {
 
   if (!ready) {
     return (
-      <div className="text-xs text-neutral-500 py-6 text-center">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400 py-6 text-center">
         Loading sandbox…
       </div>
     )
@@ -92,22 +92,22 @@ export function Sandbox() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-2 ml-0.5">
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight">
           Sandbox
         </h2>
         <button
           type="button"
           onClick={() => navigate('/preferences')}
           title="Change voice or speed in Voice & speech settings"
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white border border-neutral-200 text-xxs font-medium text-neutral-700 hover:border-blue-300 hover:text-blue-700 transition-colors tabular-nums"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xxs font-medium text-neutral-700 dark:text-neutral-200 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-700 dark:hover:text-blue-300 transition-colors tabular-nums"
         >
-          <Sliders size={11} className="text-indigo-500" />
+          <Sliders size={11} className="text-indigo-500 dark:text-indigo-400" />
           <span>
             {sync.language} · {shortVoiceName} · {sync.speed}×
           </span>
         </button>
       </div>
-      <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3 grow">
+      <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3 grow">
         <Textarea
           label="Text or SSML"
           placeholder="Type or paste any text (or <speak>...</speak> SSML) to read aloud or export as audio…"
@@ -120,7 +120,7 @@ export function Sandbox() {
           className="h-full"
         />
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xxs text-neutral-500 tabular-nums">
+          <span className="text-xxs text-neutral-500 dark:text-neutral-400 tabular-nums">
             {(text?.length || 0).toLocaleString()} characters
           </span>
           <div className="flex gap-2 w-fit ml-auto">

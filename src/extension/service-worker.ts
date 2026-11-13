@@ -1066,6 +1066,10 @@ async function setDefaultSettings() {
       typeof sync.showSelectionToolbar === 'boolean'
         ? sync.showSelectionToolbar
         : true,
+    theme:
+      sync.theme === 'light' || sync.theme === 'dark' || sync.theme === 'system'
+        ? sync.theme
+        : 'system',
   })
 }
 

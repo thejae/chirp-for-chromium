@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.12.0] - 2026-11-13
+
+### Added
+- **Light & Dark Theme with System Auto-Detection**: Added `src/hooks/useTheme.ts` and enabled Tailwind `darkMode: 'class'` in `tailwind.config.cjs`. By default (`theme: 'system'`), the extension auto-detects the browser/OS color scheme via `prefers-color-scheme: dark` and updates live when the system theme changes.
+- **Appearance Theme Selector**: Added a **System / Light / Dark** segmented control in `src/extension/components/views/Settings.tsx` persisted via `chrome.storage.sync`.
+- **Themed Floating Pop-up Player & Dialogs**: Applied the active light/dark theme to `src/extension/components/player/SelectionToolbar.tsx` and Shadow DOM dialogs in `src/extension/content-script.tsx`, as well as all popup views, sidebar, `MiniPlayer`, and shared input/dialog components.
+
 ## [13.11.0] - 2026-11-13
 
 ### Added

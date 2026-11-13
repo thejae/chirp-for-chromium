@@ -57,7 +57,7 @@ export function Billing() {
 
   if (!sessionReady || !syncReady) {
     return (
-      <div className="text-xs text-neutral-500 py-6 text-center">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400 py-6 text-center">
         Loading billing details…
       </div>
     )
@@ -68,10 +68,10 @@ export function Billing() {
 
     return (
       <div>
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight mb-2 ml-0.5">
           Google Cloud Credentials
         </h2>
-        <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3">
+        <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3">
           <FreeNotice />
           <ApiKeyForm.Content form={form} sync={sync} setSync={setSync} />
           <ApiKeyForm.Buttons form={form} sync={sync} setSync={setSync} />
@@ -85,11 +85,11 @@ export function Billing() {
 
     return (
       <div>
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight mb-2 ml-0.5">
           Payment & Credits
         </h2>
         {!sync.user?.credits && (
-          <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3">
+          <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3">
             <Notice />
             <PricingTable />
             <div className="flex gap-2 pt-1">
@@ -119,18 +119,18 @@ export function Billing() {
         )}
 
         {sync.user?.credits > 0 && (
-          <div className="bg-white p-3.5 rounded-lg shadow-sm border border-neutral-200 flex flex-col gap-3 text-xs leading-relaxed text-neutral-700">
-            <div className="flex items-center justify-between bg-emerald-50/80 border border-emerald-200 rounded-md px-3 py-2">
-              <span className="text-neutral-700">Available balance</span>
-              <span className="font-bold text-emerald-800 tabular-nums text-sm">
+          <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+            <div className="flex items-center justify-between bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/70 rounded-md px-3 py-2">
+              <span className="text-neutral-700 dark:text-neutral-200">Available balance</span>
+              <span className="font-bold text-emerald-800 dark:text-emerald-300 tabular-nums text-sm">
                 {creditFormat(sync.user.credits)}
               </span>
             </div>
-            <p className="text-neutral-600">
+            <p className="text-neutral-600 dark:text-neutral-400">
               Need to update your payment method or have a billing question?
               Contact{' '}
               <a
-                className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2"
                 href="mailto:michael.poirierginter@gmail.com"
               >
                 michael.poirierginter@gmail.com
@@ -167,10 +167,10 @@ export function Billing() {
 
     return (
       <div>
-        <h2 className="text-sm font-semibold text-neutral-800 tracking-tight mb-2 ml-0.5">
+        <h2 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight mb-2 ml-0.5">
           Invoices
         </h2>
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 divide-y divide-neutral-200/70 flex flex-col overflow-hidden">
+        <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200/70 dark:divide-neutral-800 flex flex-col overflow-hidden">
           {invoices.map((invoice) => (
             <Invoice key={invoice.id} {...invoice} />
           ))}
@@ -191,11 +191,11 @@ export function Billing() {
 
 function Invoice(props) {
   return (
-    <div className="flex items-center px-3.5 py-2.5 even:bg-neutral-50/70 text-xs">
-      <div className="bg-emerald-100 text-emerald-800 rounded p-1 mr-2.5 shrink-0">
+    <div className="flex items-center px-3.5 py-2.5 even:bg-neutral-50/70 dark:even:bg-neutral-800/40 text-xs">
+      <div className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded p-1 mr-2.5 shrink-0">
         <DollarSign size={14} />
       </div>
-      <div className="font-medium text-neutral-700 tabular-nums">
+      <div className="font-medium text-neutral-700 dark:text-neutral-200 tabular-nums">
         {dateFormat(props.inserted_at)}
       </div>
 
