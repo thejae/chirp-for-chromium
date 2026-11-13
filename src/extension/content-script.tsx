@@ -4,6 +4,7 @@ import { GitHub } from 'react-feather'
 import { useState } from 'react'
 import { Dialog } from '../components/Dialog'
 import { OnboardingDialog } from './components/dialogs/OnboardingDialog'
+import { SelectionToolbar } from './components/player/SelectionToolbar'
 import { Button } from '../components/Button'
 import { useMount } from '../hooks/useMount'
 import { useSync } from '../hooks/useSync'
@@ -113,40 +114,52 @@ function ContentScript() {
     }
   })
 
-  if (!error || !ready) {
+  if (!ready) {
     return null
   }
 
-  if (
-    error.errorCode === 'MISSING_API_KEY' ||
-    (sync.user && !sync.user.credits)
-  ) {
-    return <OnboardingDialog onClose={() => setError(null)} />
+  const showSelectionToolbar = sync.showSelectionToolbar !== false
+  let errorDialog: React.ReactNode = null
+
+  if (error) {
+    if (
+      error.errorCode === 'MISSING_API_KEY' ||
+      (sync.user && !sync.user.credits)
+    ) {
+      errorDialog = <OnboardingDialog onClose={() => setError(null)} />
+    } else {
+      errorDialog = (
+        <Dialog
+          title={error.errorTitle}
+          content={error.errorMessage}
+          onClose={() => setError(null)}
+          buttons={[
+            <Button
+              key="create-issue-button"
+              className="max-w-fit"
+              Icon={GitHub}
+              onClick={() => createGithubIssueFromError(error)}
+            >
+              Report issue
+            </Button>,
+            <Button
+              key="close-button"
+              className="max-w-fit"
+              type="primary"
+              onClick={() => setError(null)}
+            >
+              Close
+            </Button>,
+          ]}
+        />
+      )
+    }
   }
 
   return (
-    <Dialog
-      title={error.errorTitle}
-      content={error.errorMessage}
-      onClose={() => setError(null)}
-      buttons={[
-        <Button
-          key="create-issue-button"
-          className="max-w-fit"
-          Icon={GitHub}
-          onClick={() => createGithubIssueFromError(error)}
-        >
-          Report issue
-        </Button>,
-        <Button
-          key="close-button"
-          className="max-w-fit"
-          type="primary"
-          onClick={() => setError(null)}
-        >
-          Close
-        </Button>,
-      ]}
-    />
+    <>
+      <SelectionToolbar enabled={showSelectionToolbar} onError={setError} />
+      {errorDialog}
+    </>
   )
 }

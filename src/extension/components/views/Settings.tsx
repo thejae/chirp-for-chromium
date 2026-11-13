@@ -19,6 +19,7 @@ export function Settings() {
   const autoReadAloud = sync.autoReadAloud !== false
   const highlightSpokenWords = sync.highlightSpokenWords !== false
   const showMiniPlayer = sync.showMiniPlayer !== false
+  const showSelectionToolbar = sync.showSelectionToolbar !== false
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -137,6 +138,45 @@ export function Settings() {
                 aria-hidden="true"
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out ${
                   showMiniPlayer ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-3.5">
+            <div className="flex flex-col gap-0.5">
+              <label
+                htmlFor="show-selection-toolbar-toggle"
+                className="text-xs font-medium text-neutral-800 cursor-pointer"
+              >
+                Show floating selection toolbar
+              </label>
+              <p className="text-xxs text-neutral-500 leading-relaxed">
+                Show a compact Read, Pause/Stop, and Download pill near text you
+                highlight on webpages.
+              </p>
+            </div>
+            <button
+              id="show-selection-toolbar-toggle"
+              type="button"
+              role="switch"
+              aria-checked={showSelectionToolbar}
+              onClick={() =>
+                setSync({
+                  ...sync,
+                  showSelectionToolbar: !showSelectionToolbar,
+                })
+              }
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                showSelectionToolbar
+                  ? 'bg-blue-600 border-transparent'
+                  : 'bg-neutral-200 border-neutral-400'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out ${
+                  showSelectionToolbar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>

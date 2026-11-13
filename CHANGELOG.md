@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.11.0] - 2026-11-13
+
+### Added
+- **Floating Selection Toolbar (`SelectionToolbar`)**: Added `src/extension/components/player/SelectionToolbar.tsx` mounted in `src/extension/content-script.tsx`. Selecting text on any webpage displays a slim `rounded-3xl` floating pill with **Read** and **Download** actions; during playback, it collapses into icon-only **Pause / Resume**, **Stop**, and **Download** controls.
+- **Full-Selection Reading Progress Bar**: Updated `src/extension/service-worker.ts` (`totalChars`, `completedChars`, and intra-chunk timing) so the 2px gradient progress bar tracks progress across the entirety of the selected text rather than resetting per audio chunk.
+- **Show Floating Selection Toolbar Setting**: Added `showSelectionToolbar` toggle in `src/extension/components/views/Settings.tsx` (default enabled) so users can disable the in-page selection toolbar if preferred.
+
 ## [13.10.0] - 2026-11-10
 
 ### Added

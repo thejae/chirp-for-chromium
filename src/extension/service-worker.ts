@@ -14,6 +14,9 @@ let activeChunkText = ''
 let totalChunks = 0
 let currentChunkIndex = 0
 let currentChunkDuration = 0
+let chunkLengths: number[] = []
+let totalChars = 0
+let completedChars = 0
 let highlightingEnabled = true
 let bootstrappedResolver = null
 const bootstrapped = new Promise((resolve) => (bootstrappedResolver = resolve))
@@ -26,6 +29,8 @@ async function updatePlaybackSessionState() {
     totalChunks,
     currentChunkIndex,
     currentChunkDuration,
+    totalChars,
+    completedChars,
   })
 }
 
@@ -152,6 +157,9 @@ export const handlers = {
     totalChunks = chunks.length
     currentChunkIndex = 0
     currentChunkDuration = 0
+    chunkLengths = chunks.map((chunk) => chunk.length)
+    totalChars = chunkLengths.reduce((sum, len) => sum + len, 0)
+    completedChars = 0
     activeChunkText = chunks[0] || ''
     await updatePlaybackSessionState()
     updateContextMenus()
@@ -178,6 +186,9 @@ export const handlers = {
         currentChunkIndex = 0
         currentChunkDuration = 0
         activeChunkText = ''
+    chunkLengths = []
+    totalChars = 0
+    completedChars = 0
         await updatePlaybackSessionState()
         updateContextMenus()
         if (highlightingEnabled) {
@@ -189,6 +200,9 @@ export const handlers = {
       const text = queue.shift()
       activeChunkText = text
       currentChunkIndex = count
+      completedChars = chunkLengths
+        .slice(0, count)
+        .reduce((sum, len) => sum + len, 0)
       await updatePlaybackSessionState()
       const nextText = queue[0]
 
@@ -209,6 +223,9 @@ export const handlers = {
           currentChunkIndex = 0
           currentChunkDuration = 0
           activeChunkText = ''
+    chunkLengths = []
+    totalChars = 0
+    completedChars = 0
           await updatePlaybackSessionState()
           updateContextMenus()
           if (highlightingEnabled) {
@@ -233,6 +250,9 @@ export const handlers = {
         currentChunkIndex = 0
         currentChunkDuration = 0
         activeChunkText = ''
+    chunkLengths = []
+    totalChars = 0
+    completedChars = 0
         await updatePlaybackSessionState()
         updateContextMenus()
         if (highlightingEnabled) {
@@ -255,6 +275,9 @@ export const handlers = {
     currentChunkIndex = 0
     currentChunkDuration = 0
     activeChunkText = ''
+    chunkLengths = []
+    totalChars = 0
+    completedChars = 0
     await updatePlaybackSessionState()
     updateContextMenus()
     if (highlightingEnabled) {
@@ -338,6 +361,9 @@ export const handlers = {
     currentChunkIndex = 0
     currentChunkDuration = 0
     activeChunkText = ''
+    chunkLengths = []
+    totalChars = 0
+    completedChars = 0
     await updatePlaybackSessionState()
     updateContextMenus()
     if (highlightingEnabled) {
@@ -1035,6 +1061,10 @@ async function setDefaultSettings() {
     highlightSpokenWords:
       typeof sync.highlightSpokenWords === 'boolean'
         ? sync.highlightSpokenWords
+        : true,
+    showSelectionToolbar:
+      typeof sync.showSelectionToolbar === 'boolean'
+        ? sync.showSelectionToolbar
         : true,
   })
 }
