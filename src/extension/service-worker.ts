@@ -49,7 +49,7 @@ async function endPlaybackSession() {
   totalChars = 0
   completedChars = 0
   await updatePlaybackSessionState()
-  updateContextMenus()
+  await updateContextMenus()
   if (highlightingEnabled) {
     await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
   }
@@ -94,11 +94,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   return true
 })
 
-chrome.storage.onChanged.addListener(function (changes) {
+chrome.storage.onChanged.addListener(async function (changes) {
   console.log('Handling storage change...', changes)
 
   if (changes.downloadEncoding) {
-    updateContextMenus()
+    await updateContextMenus()
   }
 })
 
@@ -162,7 +162,7 @@ export const handlers = {
     completedChars = 0
     activeChunkText = chunks[0] || ''
     await updatePlaybackSessionState()
-    updateContextMenus()
+    await updateContextMenus()
 
     let count = 0
     const sync = await chrome.storage.sync.get()
