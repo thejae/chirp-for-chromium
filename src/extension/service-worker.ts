@@ -190,12 +190,12 @@ export const handlers = {
         prefetchQueue.push(this.getAudioUri({ text: nextText, encoding }))
       }
 
-      const audioUri =
-        count === 0
-          ? await this.getAudioUri({ text, encoding })
-          : await prefetchQueue.shift()
-
       try {
+        const audioUri =
+          count === 0
+            ? await this.getAudioUri({ text, encoding })
+            : await prefetchQueue.shift()
+
         if (isError(audioUri)) {
           playing = false
           paused = false
