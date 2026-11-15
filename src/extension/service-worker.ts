@@ -3,6 +3,11 @@ import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
 import { resolveVoices } from './helpers/voice-helpers.js'
 import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
+import {
+  clearCachedAudio,
+  getCachedAudio,
+  storeCachedAudio,
+} from './helpers/audio-cache-helpers.js'
 
 // Local state -----------------------------------------------------------------
 let queue = []
@@ -86,7 +91,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (offscreen) return
 
   if (!handlers[id]) throw new Error(`No handler found for ${id}`)
-  if (id !== 'clearLogs' && id !== 'chunkPlaybackStarted') {
+  if (
+    id !== 'clearLogs' &&
+    id !== 'chunkPlaybackStarted' &&
+    id !== 'clearAudioCache'
+  ) {
     appendLog('INFO', `Runtime message received: ${id}`, payload)
   }
   handlers[id](payload).then(sendResponse)
@@ -131,6 +140,19 @@ chrome.runtime.onInstalled.addListener(async function (details) {
 export const handlers = {
   clearLogs: async function () {
     await clearLogs()
+    return true
+  },
+  clearAudioCache: async function () {
+    const { entries, chars } = clearCachedAudio()
+
+    await appendLog(
+      'INFO',
+      entries
+        ? `Dropped ${entries} cached audio clips from this session`
+        : 'No cached audio held this session, so nothing to drop',
+      { entries, chars },
+    )
+
     return true
   },
   readAloud: async function ({ text, highlight = true }) {
@@ -266,7 +288,7 @@ export const handlers = {
     if (playing) return false
 
     const sync = await chrome.storage.sync.get()
-    if (sync.autoReadAloud === false) return false
+    if (sync.autoReadAloud !== true) return false
 
     if (!sync.apiKey) return false
 
@@ -487,11 +509,25 @@ export const handlers = {
         },
       })
 
+    // The request body is the whole identity of the audio: the input text or
+    // SSML, the resolved voice and language (CJK substitution included), the
+    // encoding, speed, pitch, gain and effects profile. An identical body
+    // earlier in the session is billed zero times.
+    const requestBody = buildRequestBody()
+    const cachedAudio = getCachedAudio(requestBody)
+    if (cachedAudio !== undefined) {
+      await appendLog(
+        'INFO',
+        `Reusing ${rawContent.length} chars synthesized earlier this session (no API call)`,
+      )
+      return cachedAudio
+    }
+
     try {
       let response = await loggedFetch(url, {
         method: 'POST',
         headers,
-        body: buildRequestBody(),
+        body: requestBody,
       })
 
       if (!response.ok) {
@@ -520,7 +556,11 @@ export const handlers = {
             body: buildRequestBody(fallbackVoice, fallbackLang),
           })
           if (response.ok) {
-            return (await response.json()).audioContent
+            const audioContent = (await response.json()).audioContent
+            // Kept under the original request body, so re-reading this sentence
+            // pays neither the Chirp3 rejection nor the retry.
+            storeCachedAudio(requestBody, audioContent)
+            return audioContent
           }
           message = (await response.json()).error?.message
         }
@@ -551,7 +591,9 @@ export const handlers = {
         return error
       }
 
-      return (await response.json()).audioContent
+      const audioContent = (await response.json()).audioContent
+      storeCachedAudio(requestBody, audioContent)
+      return audioContent
     } catch (e) {
       const error = createError({
         errorCode: 'FAILED_TO_SYNTHESIZE_TEXT',
@@ -841,7 +883,7 @@ async function setDefaultSettings() {
     audioProfile: sync.audioProfile || 'default',
     volumeGainDb: sync.volumeGainDb || 0,
     autoReadAloud:
-      typeof sync.autoReadAloud === 'boolean' ? sync.autoReadAloud : true,
+      typeof sync.autoReadAloud === 'boolean' ? sync.autoReadAloud : false,
     highlightSpokenWords:
       typeof sync.highlightSpokenWords === 'boolean'
         ? sync.highlightSpokenWords

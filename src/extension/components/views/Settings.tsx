@@ -1,5 +1,6 @@
 import React from 'react'
-import { Monitor, Moon, Sun } from 'react-feather'
+import { Monitor, Moon, Sun, Trash2 } from 'react-feather'
+import { Button } from '../../../components/Button.js'
 import { useSync } from '../../../hooks/useSync.js'
 import { ThemePreference, useTheme } from '../../../hooks/useTheme'
 
@@ -30,10 +31,14 @@ export function Settings() {
     )
   }
 
-  const autoReadAloud = sync.autoReadAloud !== false
+  const autoReadAloud = sync.autoReadAloud === true
   const highlightSpokenWords = sync.highlightSpokenWords !== false
   const showMiniPlayer = sync.showMiniPlayer !== false
   const showSelectionToolbar = sync.showSelectionToolbar !== false
+
+  async function handleClearAudioCache() {
+    await chrome.runtime.sendMessage({ id: 'clearAudioCache' })
+  }
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -242,6 +247,29 @@ export function Settings() {
                 }`}
               />
             </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-3.5">
+            <div className="flex flex-col gap-0.5">
+              <span
+                className="text-xs font-medium text-neutral-800 dark:text-neutral-100"
+              >
+                Clear cached audio
+              </span>
+              <p className="text-xxs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                Audio already synthesized and played back this session cost the
+                API once and is replayed from memory for free. Clearing it
+                releases that memory, so the next read of the same text pays
+                again and picks up any voice or speed you just changed.
+              </p>
+            </div>
+            <Button
+              className="w-fit py-1.5 px-2.5"
+              Icon={Trash2}
+              onClick={handleClearAudioCache}
+            >
+              Clear
+            </Button>
           </div>
         </div>
       </div>
