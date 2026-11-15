@@ -70,8 +70,12 @@ if (environment === 'production') {
 
     const releaseName = `chirp3-for-${browser}-${packageVersion}`
     console.time(`✅ Zipped up release ${releaseName}`)
+    // The archives are uploaded to the Chrome Web Store and Edge Addons as-is,
+    // so `manifest.json` has to sit at the top level of the zip, not under a
+    // `dist/` folder. Zip from inside the build directory instead.
+    const zipTarget = `releases/${releaseName}.zip`
     execSync(
-      `rm -f releases/${releaseName}.zip && (command -v zip >/dev/null 2>&1 && zip -r releases/${releaseName}.zip ${outDir} || python3 -m zipfile -c releases/${releaseName}.zip ${outDir})`,
+      `rm -f ${zipTarget} && (cd ${outDir} && if command -v zip >/dev/null 2>&1; then zip -r ../${zipTarget} *; else python3 -m zipfile -c ../${zipTarget} *; fi)`,
     )
     console.timeEnd(`✅ Zipped up release ${releaseName}`)
     console.log('')
