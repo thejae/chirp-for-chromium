@@ -623,8 +623,19 @@ export const handlers = {
     const chunks = text.chunk()
     console.log('Chunked text into', chunks.length, 'chunks', chunks)
 
-    const promises = chunks.map((text) => this.synthesize({ text, encoding }))
-    const audioContents = await Promise.all(promises)
+    // Google answers bursts of simultaneous synthesize calls with 429s, which
+    // used to fail the whole download; keep only a few requests in flight.
+    const batchSize = 5
+    const audioContents = []
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      audioContents.push(
+        ...await Promise.all(
+          chunks
+            .slice(i, i + batchSize)
+            .map((chunk) => this.synthesize({ text: chunk, encoding })),
+        ),
+      )
+    }
     const errorContents = audioContents.filter(isError)
 
     if (errorContents.length) {
