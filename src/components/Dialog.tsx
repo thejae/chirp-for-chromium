@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { useEffect, useId, useRef } from 'react'
-import { useMount } from '../hooks/useMount'
 import { useOutsideClick } from '../hooks/useOutsideClick'
 
 type DialogProps = {
@@ -25,8 +24,6 @@ export function Dialog({
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const outsideClickRef = useOutsideClick(onClose)
-
-  useMount(() => document.getSelection()?.removeAllRanges())
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null
