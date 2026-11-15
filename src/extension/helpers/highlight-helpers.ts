@@ -38,6 +38,7 @@ const SCROLL_KEYS = new Set([
 ])
 
 let savedRange: Range | null = null
+let savedRanges: Range[] = []
 let charMap: CharEntry[] = []
 let searchCursor = 0
 let rafId: number | null = null
@@ -371,6 +372,50 @@ function autoScrollToRangeIfNeeded(range: Range) {
 }
 
 /**
+ * Returns true when `inner` lies entirely within `outer` (identical or narrower
+ * bounds). `Range.comparePoint` gives an unambiguous inside/outside answer; a
+ * boundary comparison is used as a fallback when the ranges don't share a tree
+ * (shadow DOM, nodes detached by page scripts).
+ */
+function rangeLiesWithin(outer: Range, inner: Range): boolean {
+  try {
+    return (
+      outer.comparePoint(inner.startContainer, inner.startOffset) === 0 &&
+      outer.comparePoint(inner.endContainer, inner.endOffset) === 0
+    )
+  } catch {
+    return (
+      outer.startContainer === inner.startContainer &&
+      outer.startOffset <= inner.startOffset &&
+      outer.endContainer === inner.endContainer &&
+      outer.endOffset >= inner.endOffset
+    )
+  }
+}
+
+/**
+ * Detects whether the page currently shows a text selection (a highlighted
+ * line) that lies outside the block(s) this extension captured for reading.
+ */
+function hasOtherHighlightedLines(): boolean {
+  if (typeof window === 'undefined') return false
+
+  const selection = window.getSelection()
+  if (!selection) return false
+
+  for (let i = 0; i < selection.rangeCount; i++) {
+    const range = selection.getRangeAt(i)
+    if (range.collapsed) continue
+    if (savedRanges.some((original) => rangeLiesWithin(original, range))) {
+      continue
+    }
+    return true
+  }
+
+  return false
+}
+
+/**
  * Captures the user's current DOM selection `Range`, prepares the character
  * map, attaches user-scroll disengagement listeners, and highlights the first
  * sentence immediately.
@@ -388,8 +433,19 @@ export function startHighlightSession(payload?: {
   let candidateRange: Range | null = null
   let candidateMap: CharEntry[] = []
 
-  if (selection && selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed) {
-    candidateRange = selection.getRangeAt(0).cloneRange()
+  // Keep every line the user currently has selected so the session can tell
+  // afterwards whether they highlighted other lines while reading.
+  const originalRanges: Range[] = []
+  if (selection) {
+    for (let i = 0; i < selection.rangeCount; i++) {
+      const range = selection.getRangeAt(i)
+      if (range.collapsed) continue
+      originalRanges.push(range.cloneRange())
+    }
+  }
+
+  candidateRange = originalRanges[0] || null
+  if (candidateRange) {
     candidateMap = buildCharMapFromRange(candidateRange)
   }
 
@@ -403,6 +459,7 @@ export function startHighlightSession(payload?: {
 
   ensureHighlightStyles()
   savedRange = candidateRange
+  savedRanges = originalRanges
   charMap = candidateMap
   searchCursor = 0
   userScrolled = false
@@ -559,8 +616,9 @@ export function resumeHighlightSession() {
 
 /**
  * Stops any active word highlight animation, removes `CSS.highlights` and
- * overlay entries, detaches scroll listeners, and restores the user's original
- * DOM selection.
+ * overlay entries, and detaches scroll listeners. The user's original selection
+ * is only restored when they have not highlighted any other lines on the page;
+ * otherwise their own highlights are left untouched.
  */
 export function endHighlightSession(
   options: { restoreSelection?: boolean } = { restoreSelection: true },
@@ -590,16 +648,24 @@ export function endHighlightSession(
     highlights.delete(WORD_HIGHLIGHT_NAME)
   }
 
+  // Only put the originally read selection back if the user is not currently
+  // highlighting other lines: their own highlights must not be overwritten.
+  const otherLinesHighlighted = hasOtherHighlightedLines()
+  const rangesToRestore = savedRanges.length ? savedRanges : [savedRange]
+
   if (
     options.restoreSelection !== false &&
     savedRange &&
+    !otherLinesHighlighted &&
     typeof window !== 'undefined'
   ) {
     try {
       const selection = window.getSelection()
       if (selection) {
         selection.removeAllRanges()
-        selection.addRange(savedRange)
+        for (const range of rangesToRestore) {
+          if (range) selection.addRange(range)
+        }
       }
     } catch {
       // Ignore if DOM nodes from original selection were removed by page scripts
@@ -607,6 +673,7 @@ export function endHighlightSession(
   }
 
   savedRange = null
+  savedRanges = []
   charMap = []
   searchCursor = 0
   sessionActive = false
