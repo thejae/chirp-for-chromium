@@ -113,6 +113,7 @@ async function buildForBrowser(browser, outDir = 'dist') {
       'src/extension/offscreen.ts',
     ],
     define,
+    minify: true,
     outdir: outDir,
   })
 
