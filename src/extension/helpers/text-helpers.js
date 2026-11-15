@@ -76,6 +76,8 @@ function splitLongSentence(sentence) {
           const terminated = ensureTerminalPunctuation(current)
           if (terminated && terminated !== '.') output.push(terminated)
         }
+        // The accumulated piece is already pushed, so start the next one empty.
+        current = ''
         if (clause.length <= maxChars) {
           current = clause
         } else {
