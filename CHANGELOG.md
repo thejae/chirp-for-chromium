@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.0] - 2026-11-15
+
+### Added
+- **Exported Logs Name Their Environment**: a downloaded log now opens with the extension build, the browser build and the operating system it was captured on, followed by the raw browser string. A bug report can be read on its own, without a follow-up question about which Chrome or Edge build it happened on. Anything a browser declines to reveal comes through as `unknown` rather than a blank line, so the header is never missing and never guesses.
+
+## [13.14.0] - 2026-11-15
+
+### Added
+- **Repeated Reads Cost Nothing**: reading the exact same text again in the same browsing session replays the audio that was already synthesized for it instead of asking Google a second time, so re-listening costs zero characters. Only an identical request counts as identical, so changing the voice, language, encoding, speed, pitch, gain or effects profile is billed again — the audio really is different. A session keeps at most 6 MB of audio and forgets what you listened to least recently once it is full, and it empties when you close the browser or the extension reloads. Worth knowing: when a long sentence falls back from Chirp3 to a WaveNet voice, that fallback take is what a repeat plays back, and clearing the cache starts you over.
+- **Clear Cached Audio In Settings**: a new **Clear** button in the settings card drops everything the session has synthesized so far. It releases the memory straight away, the next read of the same text pays the API again, and it is the quickest way to hear a fresh take after changing voice or speed. The **Logs** view records how many clips were dropped.
+
+### Changed
+- **Opening The Popup No Longer Speaks By Itself**: auto-read is now opt-in. Highlighting text and opening the popup leaves the page silent until you turn the **Auto-read aloud** toggle on; that toggle used to default to on, so anyone who never touched it now starts reading on demand through the right-click menu, the selection toolbar or the keyboard shortcut.
+
 ## [13.13.2] - 2026-11-15
 
 ### Fixed

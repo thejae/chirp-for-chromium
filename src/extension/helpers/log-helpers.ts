@@ -83,6 +83,89 @@ export async function clearLogs(): Promise<void> {
 }
 
 /**
+ * Best-effort browser name and version parsed out of a legacy user agent string,
+ * for browsers that do not expose `navigator.userAgentData`.
+ */
+function browserFromUserAgent(userAgent: string): string {
+  const edge = /Edg(?:e|A)?\/([\d.]+)/.exec(userAgent)
+  const chrome = /Chrome\/([\d.]+)/.exec(userAgent)
+  const version = (edge || chrome)?.[1]
+
+  if (edge) return version ? `Microsoft Edge ${version}` : 'Microsoft Edge'
+  if (chrome) return version ? `Chrome ${version}` : 'Chrome'
+  return ''
+}
+
+/**
+ * Best-effort operating system and version parsed out of a legacy user agent
+ * string, mirroring what `navigator.userAgentData.os` would have reported.
+ */
+function osFromUserAgent(userAgent: string): string {
+  const windows = /Windows NT ([\d.]+)/.exec(userAgent)
+  if (windows) return `Windows NT ${windows[1]}`
+
+  const mac = /Mac OS X ([\d_.]+)/.exec(userAgent)
+  if (mac) return `Mac OS X ${mac[1]}`
+  if (/Macintosh/.test(userAgent)) return 'Mac OS'
+  if (/X11/.test(userAgent)) return 'Linux'
+  return ''
+}
+
+/**
+ * Formats the environment facts that head an exported diagnostic log: extension
+ * build, browser build, operating system, and the raw user agent string.
+ */
+export function environmentBanner(
+  environment: { userAgent?: string; userAgentData?: any; version?: string },
+): string {
+  const agentData = environment.userAgentData ?? {}
+  const allBrands = agentData.fullVersionList?.length
+    ? agentData.fullVersionList
+    : agentData.brands ?? []
+  const branded = allBrands.filter(
+    (brand: any) => brand.name !== 'Chromium' && brand.name !== 'Other',
+  )
+  const brand = (branded.length ? branded : allBrands)[0]
+
+  const browser =
+    (brand?.name
+      ? `${brand.name} ${brand.version || 'unknown'}`
+      : browserFromUserAgent(environment.userAgent ?? '')) ||
+    'unknown'
+  const platform =
+    (agentData.os?.name
+      ? `${agentData.os.name} ${agentData.os.version || ''}`.trim()
+      : osFromUserAgent(environment.userAgent ?? '')) ||
+    'unknown'
+
+  const lines = [
+    `Extension version: ${environment.version || 'unknown'}`,
+    `Browser: ${browser}`,
+    `Platform: ${platform}`,
+  ]
+
+  if (environment.userAgent) {
+    lines.push(`User agent: ${environment.userAgent}`)
+  }
+
+  return lines.join('\n')
+}
+
+/**
+ * Reads whatever the current browser exposes about itself and formats it as the
+ * banner for the export. Anything the browser hides reports as `unknown`.
+ */
+export function environmentHeader(): string {
+  const agent = typeof navigator === 'undefined' ? undefined : navigator
+
+  return environmentBanner({
+    userAgent: agent?.userAgent,
+    userAgentData: agent?.userAgentData,
+    version: process.env.npm_package_version,
+  })
+}
+
+/**
  * Performs an HTTP `fetch` while recording verbose request and response
  * diagnostics (method, URL, request body summary, status, duration, and error
  * payload) into the extension log.

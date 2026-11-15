@@ -3,7 +3,11 @@ import { Download, Trash2 } from 'react-feather'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '../../../components/Button.js'
 import { useSession } from '../../../hooks/useSession.js'
-import { LogEntry, LogLevel } from '../../helpers/log-helpers.js'
+import {
+  environmentHeader,
+  LogEntry,
+  LogLevel,
+} from '../../helpers/log-helpers.js'
 
 const levelBadgeStyles: Record<LogLevel, string> = {
   INFO: 'bg-neutral-200/80 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
@@ -31,12 +35,13 @@ export function Logs() {
   function handleExportLogs() {
     if (!logs.length) return
 
-    const formatted = logs
-      .map((entry) => {
-        const header = `[${entry.timestamp}] [${entry.level}] ${entry.message}`
-        return entry.details ? `${header}\n${entry.details}` : header
-      })
-      .join('\n\n')
+    const formatted = [
+      environmentHeader(),
+      ...logs.map((entry) => {
+        const line = `[${entry.timestamp}] [${entry.level}] ${entry.message}`
+        return entry.details ? `${line}\n${entry.details}` : line
+      }),
+    ].join('\n\n')
 
     const blob = new Blob([formatted], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
