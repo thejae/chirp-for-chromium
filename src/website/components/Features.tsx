@@ -71,7 +71,7 @@ export function Features() {
           description="The extension is open source and available on GitHub under the MIT license"
           link={{
             text: 'View on GitHub',
-            href: 'https://www.github.com/pgmichael/wavenet-for-chrome',
+            href: 'https://github.com/thejae/chirp-for-chromium',
           }}
         />
       </div>

@@ -7,7 +7,6 @@ import {
   Key,
   Settings,
   Sliders,
-  Star,
   Terminal,
 } from 'react-feather'
 import { twMerge } from 'tailwind-merge'
@@ -87,13 +86,6 @@ export function Sidebar() {
           to="https://github.com/thejae/chirp-for-chromium"
         >
           Contribute
-        </Sidebar.Item>
-        <Sidebar.Item
-          Icon={Star}
-          color="bg-amber-500"
-          to="https://chrome.google.com/webstore/detail/wavenet-for-chrome/iefankigbnlnlaolflbcopliocibkffc?hl=en"
-        >
-          Leave a review
         </Sidebar.Item>
       </div>
     </nav>

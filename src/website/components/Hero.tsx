@@ -1,6 +1,6 @@
 import React from 'react'
 import { useState } from 'react'
-import { StopCircle, Play } from 'react-feather'
+import { StopCircle, Play, GitHub } from 'react-feather'
 import { useMount } from '../../hooks/useMount'
 import { Button } from '../../components/Button'
 
@@ -49,26 +49,15 @@ export function Hero() {
                 audio
               </h1>
               <p className="text-neutral-500 text-lg mt-2 max-w-2xl">
-                Wavenet for Chrome is an extension that allows you to use Google
-                Cloud's text to speech API to listen or download audio from any
-                website
+                Chirp3 for Chromium is an extension that lets you use Google
+                Cloud's text to speech API to listen to or download audio from
+                any website, using an API key you provide
               </p>
             </div>
             <div className="flex gap-2">
-              <a href="https://chrome.google.com/webstore/detail/wavenet-for-chrome/iefankigbnlnlaolflbcopliocibkffc">
-                <Button
-                  className="w-fit"
-                  Icon={() => (
-                    <img
-                      src={new URL(
-                        '../assets/icons/google-chrome.png',
-                        import.meta.url,
-                      ).toString()}
-                      className="h-4 mr-2"
-                    />
-                  )}
-                >
-                  Install on Chrome
+              <a href="https://github.com/thejae/chirp-for-chromium">
+                <Button className="w-fit" Icon={GitHub}>
+                  Get Chirp3 from GitHub
                 </Button>
               </a>
               <Button

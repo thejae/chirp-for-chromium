@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { GitHub } from 'react-feather'
 import { Logo } from './Logo'
 import { useScroll } from '../hooks/useScroll'
 import { Button } from '../../components/Button'
@@ -30,20 +31,9 @@ export function Header() {
           >
             Changelog
           </Link>
-          <a href="https://chrome.google.com/webstore/detail/wavenet-for-chrome/iefankigbnlnlaolflbcopliocibkffc">
-            <Button
-              className="hidden md:flex w-fit ml-1"
-              Icon={() => (
-                <img
-                  src={new URL(
-                    '../assets/icons/google-chrome.png',
-                    import.meta.url,
-                  ).toString()}
-                  className="h-4 mr-2"
-                />
-              )}
-            >
-              Install on Chrome
+          <a href="https://github.com/thejae/chirp-for-chromium">
+            <Button className="hidden md:flex w-fit ml-1" Icon={GitHub}>
+              View on GitHub
             </Button>
           </a>
         </div>

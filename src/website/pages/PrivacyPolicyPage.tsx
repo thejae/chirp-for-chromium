@@ -62,13 +62,12 @@ export function PrivacyPolicyPage() {
           <h2 className="text-2xl font-bold mb-2">5. Contact Us</h2>
           <p>
             If you have any questions about this privacy policy or our
-            practices, please contact us. Preferred method of contact is by
-            emailing{' '}
+            practices, please file a report on{' '}
             <a
-              href="mailto:michael.poirierginter+wavenet-for-chrome@gmail.com"
+              href="https://github.com/thejae/chirp-for-chromium/issues"
               className="text-blue-600 hover:underline font-bold"
             >
-              michael.poirierginter+wavenet-for-chrome@gmail.com
+              our GitHub repository
             </a>
             .
           </p>
