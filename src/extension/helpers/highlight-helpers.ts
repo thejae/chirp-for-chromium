@@ -40,6 +40,7 @@ const SCROLL_KEYS = new Set([
 let savedRange: Range | null = null
 let savedRanges: Range[] = []
 let charMap: CharEntry[] = []
+let charMapText = ''
 let searchCursor = 0
 let rafId: number | null = null
 let userScrolled = false
@@ -451,9 +452,10 @@ export function startHighlightSession(payload?: {
 
   if (!candidateMap.length) return
 
+  const candidateText = candidateMap.map((c) => c.char).join('')
+
   if (payload?.text) {
-    const domStr = candidateMap.map((c) => c.char).join('')
-    const { timings } = matchChunkWords(payload.text.slice(0, 120), domStr, 0)
+    const { timings } = matchChunkWords(payload.text.slice(0, 120), candidateText, 0)
     if (!timings.length) return
   }
 
@@ -461,6 +463,7 @@ export function startHighlightSession(payload?: {
   savedRange = candidateRange
   savedRanges = originalRanges
   charMap = candidateMap
+  charMapText = candidateText
   searchCursor = 0
   userScrolled = false
   sessionActive = true
@@ -555,10 +558,11 @@ export function highlightChunk({
   // Playback has begun: clear the loading perimeter animation
   isAudioLoading = false
 
-  const fullDomString = charMap.map((c) => c.char).join('')
+  // Built once per session in startHighlightSession and reused here: rebuilding
+  // it for every chunk walks every character of the selection again.
   const { timings, nextCursor } = matchChunkWords(
     text,
-    fullDomString,
+    charMapText,
     searchCursor,
   )
 
@@ -675,6 +679,7 @@ export function endHighlightSession(
   savedRange = null
   savedRanges = []
   charMap = []
+  charMapText = ''
   searchCursor = 0
   sessionActive = false
   isAudioLoading = false
