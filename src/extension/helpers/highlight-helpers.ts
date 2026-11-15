@@ -145,13 +145,18 @@ function clearOverlayContainer() {
 function renderOverlayRects() {
   const container = getOrCreateOverlayContainer()
   if (!container) return
-  container.replaceChildren()
+
+  // The scroll and resize listeners call this on every event, so the divs are
+  // reused instead of deleted and rebuilt, which churns the DOM while reading.
+  let used = 0
 
   if (currentSentenceRange) {
     const rects = Array.from(currentSentenceRange.getClientRects())
     for (const rect of rects) {
       if (rect.width <= 0 || rect.height <= 0) continue
-      const el = document.createElement('div')
+      const el = container.children[used] || document.createElement('div')
+      if (used >= container.children.length) container.appendChild(el)
+      used++
       el.className = isAudioLoading
         ? 'chirp-overlay-block chirp-overlay-block-loading'
         : 'chirp-overlay-block'
@@ -162,7 +167,6 @@ function renderOverlayRects() {
         width: ${rect.width + 2}px;
         height: ${rect.height + 2}px;
       `
-      container.appendChild(el)
     }
   }
 
@@ -170,7 +174,10 @@ function renderOverlayRects() {
     const rects = Array.from(currentWordRange.getClientRects())
     for (const rect of rects) {
       if (rect.width <= 0 || rect.height <= 0) continue
-      const el = document.createElement('div')
+      const el = container.children[used] || document.createElement('div')
+      if (used >= container.children.length) container.appendChild(el)
+      used++
+      el.className = ''
       el.style.cssText = `
         position: fixed;
         left: ${rect.left - 2}px;
@@ -182,8 +189,11 @@ function renderOverlayRects() {
         border-radius: 3px;
         pointer-events: none;
       `
-      container.appendChild(el)
     }
+  }
+
+  for (let i = container.children.length - 1; i >= used; i--) {
+    container.removeChild(container.children[i])
   }
 }
 
