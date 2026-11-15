@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@sentry/browser": "^7.61.1",
-    "@sentry/tracing": "^7.61.1",
     "dotenv": "^16.0.3",
     "fuse.js": "^6.6.2",
     "react": "^18.2.0",

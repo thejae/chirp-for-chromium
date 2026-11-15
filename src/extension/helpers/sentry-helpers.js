@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/browser'
-import { Integrations } from '@sentry/tracing'
+import { BrowserTracing } from '@sentry/browser'
 
 export async function initializeSentry() {
   console.log('Initializing Sentry...', ...arguments)
@@ -17,7 +17,7 @@ export async function initializeSentry() {
     dsn: 'https://1ff01a53014a4671ba548e9b431e2b15@o516851.ingest.sentry.io/5623837',
     release: self.version,
     environment: self.installType,
-    integrations: [new Integrations.BrowserTracing()],
+    integrations: [new BrowserTracing()],
     tracesSampleRate: 1.0,
   })
 }
