@@ -35,8 +35,15 @@ export function getLanguageOptions(session) {
   })
 
   const languageNames = session.languages.map((value) => {
-    const displayName = displayNames.of(value)
-    if (!displayName) throw new Error(`No display name for ${value}`)
+    // Intl.DisplayNames.of throws a RangeError for codes the browser's ICU
+    // data does not know (for example `zh-YUE`), which used to crash the
+    // whole settings view, so fall back to showing the raw code.
+    let displayName: string
+    try {
+      displayName = displayNames.of(value)
+    } catch {
+      displayName = value
+    }
 
     let [title, ...tail] = displayName.split(' ')
     title += ` (${value.split('-')[1]})`
