@@ -125,6 +125,13 @@ export const handlers = {
 
     const chunks = text.chunk()
     console.log('Chunked text into', chunks.length, 'chunks', chunks)
+
+    // Claim the session before the first await: a second trigger that arrives
+    // while this one is still logging must see `playing` and stop this session
+    // instead of pushing the same text into the shared queue a second time.
+    playing = true
+    paused = false
+
     await appendLog(
       'INFO',
       `Reading aloud (${text.length} chars in ${chunks.length} chunk${chunks.length === 1 ? '' : 's'})`,
@@ -132,8 +139,6 @@ export const handlers = {
     )
 
     queue.push(...chunks)
-    playing = true
-    paused = false
     totalChunks = chunks.length
     currentChunkIndex = 0
     currentChunkDuration = 0
