@@ -1,46 +1,4 @@
 import React from 'react'
-import { isError } from '../../helpers/error-helpers'
-import { useStore } from '../../../hooks/useStore'
-import { errorStore } from '../../extension'
-
-export const Notice = () => {
-  const [, setError] = useStore(errorStore, { rerenderOnEffect: false })
-
-  async function handleAuthentication() {
-    const response = await chrome.runtime.sendMessage({ id: 'authenticate' })
-
-    if (isError(response)) setError(response)
-  }
-
-  return (
-    <div className="flex flex-col gap-2.5 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-      <p>
-        Chirp3 for Chromium is an{' '}
-        <a
-          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2"
-          href="https://github.com/thejae/chirp-for-chromium"
-          target="_blank"
-          rel="noreferrer"
-        >
-          open-source extension
-        </a>{' '}
-        powered by Google Cloud Text-to-Speech. Purchase prepaid credits for
-        one-click setup, or connect your own Google Cloud API key.
-      </p>
-      <p className="text-neutral-600 dark:text-neutral-400">
-        Already purchased credits?{' '}
-        <button
-          type="button"
-          className="cursor-pointer text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-          onClick={handleAuthentication}
-        >
-          Re-sync your account
-        </button>
-        .
-      </p>
-    </div>
-  )
-}
 
 export const FreeNotice = () => (
   <div className="flex flex-col gap-1.5 mb-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">

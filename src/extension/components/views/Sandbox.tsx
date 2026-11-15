@@ -40,7 +40,7 @@ export function Sandbox() {
   const isPlaying = playing || Boolean(session?.playing)
 
   function handleValidation() {
-    if (sync.mode === 'free' && !sync.apiKeyValid) {
+    if (!sync.apiKeyValid) {
       setValueError('Please add and verify your Google Cloud API key in Credentials')
       return false
     }

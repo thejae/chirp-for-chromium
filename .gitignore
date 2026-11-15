@@ -4,7 +4,8 @@ node_modules/
 # Distribution / build output
 dist/
 dist-website/
-releases/*.zip
+releases/
+dist-*/
 
 # Tooling & scratch directories
 .impeccable/

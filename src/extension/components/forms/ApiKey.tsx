@@ -1,6 +1,6 @@
 import React from 'react'
 import { useState } from 'react'
-import { CheckCircle, CreditCard, Key, Lock } from 'react-feather'
+import { CheckCircle, Key, Lock } from 'react-feather'
 import { Text } from '../../../components/inputs/Text.jsx'
 import { Button } from '../../../components/Button.js'
 import { useSync } from '../../../hooks/useSync.js'
@@ -36,15 +36,7 @@ ApiKeyForm.Content = function ({ form, sync, setSync }) {
 
 ApiKeyForm.Buttons = function ({ form, sync, setSync }) {
   return (
-    <div className="flex gap-2">
-      <Button
-        Icon={CreditCard}
-        onClick={() => setSync({ ...sync, mode: 'paid' })}
-      >
-        {sync.user?.credits > 0
-          ? 'Use credits instead'
-          : 'Purchase credits instead'}
-      </Button>
+    <div className="flex gap-2 justify-center">
       <Button
         type="primary"
         Icon={Key}

@@ -15,17 +15,6 @@ export function ChangelogPage() {
           isFirst={true}
           version="13"
           date="2023-11-05"
-          new={[
-            {
-              title: 'Purchase credits (Optional)',
-              description:
-                "It's now possible to purchase credits directly from the extension. This is completely optional and you can still use the extension for free. Purchasing credits will help support the development of the extension and allow me to continue to add new features.",
-              image: new URL(
-                '../assets/images/changelog/paid-version.png',
-                import.meta.url,
-              ).toString(),
-            },
-          ]}
           improvements={[
             {
               title: 'Popup remembers the last panel you were on',

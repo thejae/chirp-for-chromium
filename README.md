@@ -4,7 +4,7 @@
 
 **Turn any highlighted webpage text into natural Google Cloud Chirp3 & WaveNet speech — with live in-page tracking, pause/resume, and MP3/OGG/PCM export.**
 
-![Version](https://img.shields.io/badge/version-13.11.0-2563eb?style=flat-square)
+![Version](https://img.shields.io/badge/version-13.13.0-2563eb?style=flat-square)
 ![Browsers](https://img.shields.io/badge/browsers-Chrome%20%26%20Edge%20(MV3)-10b981?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-neutral?style=flat-square)
 
@@ -28,10 +28,9 @@
 - `Cmd+Shift+S` (macOS) / `Ctrl+Shift+S` (Windows/Linux) — Read highlighted text aloud / Stop
 - `Cmd+Shift+E` (macOS) / `Ctrl+Shift+E` (Windows/Linux) — Download highlighted text as audio
 
-## Usage & Billing
+## Usage
 
-- **Own API Key**: Use your own [Google Cloud API key](https://www.youtube.com/watch?v=1n8xlVNWEZ0); usage is billed directly through your Google Cloud account per their [pricing policy](https://cloud.google.com/text-to-speech/pricing).
-- **Credits**: Purchase credits directly in the extension; usage is deducted per synthesis with automatic refill when empty.
+- **Google Cloud API Key**: This open-source extension requires your own [Google Cloud Text-to-Speech API key](https://www.youtube.com/watch?v=1n8xlVNWEZ0). Usage is billed through your Google Cloud account according to Google's [pricing policy](https://cloud.google.com/text-to-speech/pricing).
 
 ---
 
@@ -41,9 +40,7 @@
    ```bash
    npm install
    ```
-2. **Configure backend**:
-   Run the [backend](https://github.com/pgmichael/wavenet-for-chrome-backend) locally, or update `BACKEND_URL` in [build.js](build.js) to point to the production API (`https://api.wavenet-for-chrome.com/v1`).
-3. **Run in development (watch mode) or build production ZIPs**:
+2. **Run in development (watch mode) or build production ZIPs**:
    ```bash
    # Development
    npm run start:extension        # Chrome
@@ -54,6 +51,9 @@
    npm run build:extension:chrome   # Chrome only
    npm run build:extension:edge     # Edge only
    ```
+3. **Add the Google Cloud API key in the extension popup**:
+   After loading the extension, open its popup and enter a Google Cloud Text-to-Speech API key in the Credentials tab.
+
 4. **Load in your browser**:
    Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, click **Load unpacked**, and select the `dist/` directory.
 

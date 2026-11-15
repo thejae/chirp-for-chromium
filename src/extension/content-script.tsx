@@ -125,8 +125,7 @@ function ContentScript() {
 
   if (error) {
     if (
-      error.errorCode === 'MISSING_API_KEY' ||
-      (sync.user && !sync.user.credits)
+      error.errorCode === 'MISSING_API_KEY'
     ) {
       errorDialog = <OnboardingDialog onClose={() => setError(null)} />
     } else {

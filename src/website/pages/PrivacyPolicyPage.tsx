@@ -19,15 +19,9 @@ export function PrivacyPolicyPage() {
           <h2 className="text-2xl font-bold mb-2">2. Information We Collect</h2>
           <ul className="list-disc">
             <li>
-              <strong>OAuth Information:</strong> We collect information such as
-              your email when you authenticate through the OAuth flow using our
-              service.
-            </li>
-            <li>
               <strong>Automatically Collected Information:</strong> We collect
-              user IP addresses, usage metrics (ex: synthesized text audio
-              configuration and character counts), and error reports to ensure
-              the effective operation of our services.
+              error reports when the extension fails, so we can help diagnose
+              issues and keep the extension working.
             </li>
           </ul>
         </section>
@@ -47,7 +41,7 @@ export function PrivacyPolicyPage() {
               To collect error reports and address any potential issues,
               ensuring our service runs smoothly and efficiently.
             </li>
-            <li>For processing payments and authentication.</li>
+
           </ul>
         </section>
 
@@ -71,39 +65,12 @@ export function PrivacyPolicyPage() {
             </li>
             <li>
               <a
-                href="https://railway.app/"
-                className="text-blue-600 hover:underline font-bold"
-              >
-                Railway
-              </a>
-              : Where our backend services are hosted.
-            </li>
-            <li>
-              <a
-                href="https://supabase.com"
-                className="text-blue-600 hover:underline font-bold"
-              >
-                Supabase
-              </a>
-              : Our database hosting partner, where certain user data is stored.
-            </li>
-            <li>
-              <a
                 href="https://sentry.io/"
                 className="text-blue-600 hover:underline font-bold"
               >
                 Sentry
               </a>
               : For the purpose of collecting and analyzing error reports.
-            </li>
-            <li>
-              <a
-                href="https://stripe.com/en-ca"
-                className="text-blue-600 hover:underline font-bold"
-              >
-                Stripe
-              </a>
-              : Our payment processing partner.
             </li>
           </ul>
         </section>

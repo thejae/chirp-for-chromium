@@ -44,15 +44,9 @@ initializeSentry()
   } catch (e: any) {
     await appendLog('WARN', 'Initial voice fetch failed during bootstrap', e?.message)
   }
-  try {
-    await handlers.fetchUser()
-  } catch (e: any) {
-    await appendLog('WARN', 'Initial user fetch failed during bootstrap', e?.message)
-  }
   await createContextMenus()
   bootstrappedResolver()
   await appendLog('INFO', 'Service worker bootstrap complete')
-  await pollForPayment()
 })()
 
 // Event listeners -------------------------------------------------------------
@@ -86,10 +80,6 @@ chrome.storage.onChanged.addListener(function (changes) {
   if (changes.downloadEncoding) {
     updateContextMenus()
   }
-
-  if (changes.paymentSession) {
-    pollForPayment()
-  }
 })
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
@@ -116,19 +106,9 @@ chrome.runtime.onInstalled.addListener(async function (details) {
     })
   }
 
-  // New installs should default to the paid mode.
-  if (details.reason === 'install') {
-    await chrome.storage.sync.set({ mode: 'paid' })
-  }
-
-  if (details.reason === 'update') {
-    const sync = await chrome.storage.sync.get()
-
-    // Previous versions of the extension didn't have the mode setting should
-    // default to the free mode when they have an API key.
-    if (typeof sync.mode === 'undefined') {
-      await chrome.storage.sync.set({ mode: sync.apiKey ? 'free' : 'paid' })
-    }
+  if (details.reason === 'install' || details.reason === 'update') {
+    await chrome.storage.sync.remove('mode')
+    await chrome.storage.sync.remove('user')
   }
 })
 
@@ -315,10 +295,7 @@ export const handlers = {
     const sync = await chrome.storage.sync.get()
     if (sync.autoReadAloud === false) return false
 
-    const hasCredentials =
-      (sync.mode === 'free' && Boolean(sync.apiKey)) ||
-      (sync.mode === 'paid' && Boolean(sync.user?.credits))
-    if (!hasCredentials) return false
+    if (!sync.apiKey) return false
 
     try {
       const [tab] = await chrome.tabs.query({
@@ -474,13 +451,7 @@ export const handlers = {
 
     const session = await chrome.storage.session.get()
     const sync = await chrome.storage.sync.get()
-    const key = sync.mode === 'paid' ? sync.user?.secret_key : sync.apiKey
-
-    let url = `${process.env.BACKEND_URL}/synthesize`
-    if (sync.mode !== 'paid') url += `?key=${key}`
-
-    const headers = { 'Content-Type': 'application/json' }
-    if (sync.mode === 'paid') headers['Authorization'] = `Bearer ${key}`
+    const key = sync.apiKey
 
     if (!key) {
       const error = createError({
@@ -490,11 +461,14 @@ export const handlers = {
           "Your api key is invalid or missing. Please double check it has been entered correctly inside the extension's popup.",
       })
 
-      await appendLog('ERROR', 'Synthesis aborted: Missing API key or credentials')
+      await appendLog('ERROR', 'Synthesis aborted: Missing API key')
       sendMessageToCurrentTab(error)
 
       return error
     }
+
+    const url = `${process.env.TTS_API_URL}/text:synthesize?key=${encodeURIComponent(key)}`
+    const headers = { 'Content-Type': 'application/json' }
 
     let ssml = undefined
     if (text.isSSML()) {
@@ -542,17 +516,25 @@ export const handlers = {
 
     const buildRequestBody = (overrideVoice?: string, overrideLang?: string) =>
       JSON.stringify({
-        text: text,
-        ssml: ssml,
-        voice_name: overrideVoice || voiceName,
-        voice_language_code: overrideLang || voiceLanguageCode,
-        audio_pitch: sync.pitch,
-        audio_speaking_rate: sync.speed,
-        audio_volume_gain_db: sync.volumeGainDb,
-        audio_encoding: apiEncoding,
-        audio_profile:
-          sync.audioProfile !== 'default' ? [sync.audioProfile] : undefined,
-        extension_version: chrome.runtime.getManifest().version,
+        input:
+          text !== undefined
+            ? { text }
+            : ssml !== undefined
+            ? { ssml }
+            : { text: '' },
+        voice: {
+          languageCode: overrideLang || voiceLanguageCode,
+          name: overrideVoice || voiceName,
+        },
+        audioConfig: {
+          audioEncoding: apiEncoding,
+          speakingRate: sync.speed,
+          pitch: sync.pitch,
+          volumeGainDb: sync.volumeGainDb,
+          ...(sync.audioProfile !== 'default'
+            ? { effectsProfileId: [sync.audioProfile] }
+            : {}),
+        },
       })
 
     try {
@@ -657,10 +639,11 @@ export const handlers = {
   validateApiKey: async function () {
     console.log('Validating API key...')
     const sync = await chrome.storage.sync.get()
+    if (!sync.apiKey) return false
 
     try {
       const response = await loggedFetch(
-        `${process.env.TTS_API_URL}/voices?key=${sync.apiKey}`,
+        `${process.env.TTS_API_URL}/voices?key=${encodeURIComponent(sync.apiKey)}`,
       )
       return response.ok
     } catch (e) {
@@ -670,10 +653,19 @@ export const handlers = {
   fetchVoices: async function () {
     console.log('Fetching voices...')
 
-    const response = await loggedFetch(`${process.env.BACKEND_URL}/voices`)
+    const sync = await chrome.storage.sync.get()
+    if (!sync.apiKey) {
+      await chrome.storage.session.remove('voices')
+      return []
+    }
+
+    const response = await loggedFetch(
+      `${process.env.TTS_API_URL}/voices?key=${encodeURIComponent(sync.apiKey)}`,
+    )
     if (!response.ok) throw new Error('Failed to fetch voices')
 
-    const voices = await response.json()
+    const payload = await response.json()
+    const voices = Array.isArray(payload) ? payload : payload?.voices
     if (!voices) throw new Error('No voices found')
 
     await chrome.storage.session.set({ voices })
@@ -681,139 +673,6 @@ export const handlers = {
     return voices
   },
 
-  // ---------------------------------------------------------------------------
-  authenticate: async function () {
-    console.log('Authenticating...')
-    await appendLog('INFO', 'Starting Google OAuth authentication')
-
-    try {
-      const token = await getOAuthToken()
-      const userResult = await loggedFetch(`${process.env.BACKEND_URL}/users`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!userResult.ok) {
-        throw new Error('Failed to authenticate user with backend')
-      }
-
-      const user = await userResult.json()
-
-      await chrome.storage.sync.set({ user })
-      await appendLog('INFO', 'User authenticated successfully')
-
-      return user
-    } catch (e: any) {
-      await appendLog('ERROR', 'Authentication failed', e?.message)
-      const error = createError({
-        errorCode: 'AUTHENTICATION_FAILED',
-        errorTitle: 'Authentication failed',
-        errorMessage: 'Please try again later or contact us for more details.',
-      })
-
-      return error
-    }
-  },
-  createPaymentSession: async function () {
-    console.log('Creating payment session...')
-
-    // Authenticate the user first
-    const user = await this.authenticate()
-    if (isError(user)) return user
-    if (!user) {
-      throw new Error('Failed to authenticate user')
-    }
-
-    if (user.credits > 0) {
-      console.log('User has credits, skipping payment session creation')
-      return
-    }
-
-    // Return the existing payment session if it exists.
-    const session = await chrome.storage.session.get()
-    if (session.paymentSession) return session.paymentSession
-
-    const response = await loggedFetch(
-      `${process.env.BACKEND_URL}/payment-sessions`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${user.secret_key}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    )
-
-    if (!response.ok) {
-      const error = createError({
-        errorCode: 'FAILED_TO_CREATE_PAYMENT_SESSION',
-        errorTitle: 'Failed to create payment session',
-        errorMessage: 'Please try again later or contact us for more details.',
-      })
-
-      sendMessageToCurrentTab(error)
-
-      return error
-    }
-
-    const paymentSession = await response.json()
-
-    console.log('Payment session result', paymentSession)
-
-    await chrome.storage.session.set({ paymentSession })
-
-    return paymentSession
-  },
-  fetchUser: async function () {
-    const sync = await chrome.storage.sync.get()
-    if (!sync.user?.secret_key) return
-
-    const response = await loggedFetch(`${process.env.BACKEND_URL}/users`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${sync.user.secret_key}` },
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch user')
-
-    const user = await response.json()
-
-    await chrome.storage.sync.set({ user })
-
-    return user
-  },
-  fetchUsage: async function () {
-    const sync = await chrome.storage.sync.get()
-    if (!sync.user?.secret_key) return
-
-    const response = await loggedFetch(`${process.env.BACKEND_URL}/insights`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${sync.user.secret_key}` },
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch usage')
-
-    const usage = await response.json()
-
-    return usage
-  },
-  fetchInvoices: async function () {
-    console.log('Fetching invoices...')
-
-    const sync = await chrome.storage.sync.get()
-    if (!sync.user?.secret_key) return
-
-    const response = await loggedFetch(`${process.env.BACKEND_URL}/invoices`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${sync.user.secret_key}` },
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch invoices')
-
-    return response.json()
-  },
 }
 
 // Helpers ---------------------------------------------------------------------
@@ -950,57 +809,6 @@ async function createOffscreenDocument() {
   }
 }
 
-/**
- * Obtains a Google OAuth2 access token.
- *
- * Attempts Chrome's native `chrome.identity.getAuthToken` first, and falls back
- * to `chrome.identity.launchWebAuthFlow` on Microsoft Edge and other Chromium
- * browsers where `getAuthToken` is unsupported.
- */
-async function getOAuthToken(): Promise<string> {
-  if (!navigator.userAgent.includes('Edg/') && chrome.identity?.getAuthToken) {
-    try {
-      const authTokenResult = await chrome.identity.getAuthToken({
-        interactive: true,
-      })
-      if (authTokenResult?.token) return authTokenResult.token
-    } catch (e) {
-      console.warn(
-        'chrome.identity.getAuthToken failed, falling back to launchWebAuthFlow',
-        e,
-      )
-    }
-  }
-
-  const redirectUri = chrome.identity.getRedirectURL()
-  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
-  authUrl.searchParams.set('client_id', process.env.GOOGLE_OAUTH2_CLIENT_ID)
-  authUrl.searchParams.set('response_type', 'token')
-  authUrl.searchParams.set('redirect_uri', redirectUri)
-  authUrl.searchParams.set(
-    'scope',
-    'https://www.googleapis.com/auth/userinfo.email',
-  )
-
-  const responseUrl = await chrome.identity.launchWebAuthFlow({
-    url: authUrl.toString(),
-    interactive: true,
-  })
-
-  if (!responseUrl) {
-    throw new Error('No response URL returned from launchWebAuthFlow')
-  }
-
-  const hash = new URL(responseUrl).hash.substring(1)
-  const params = new URLSearchParams(hash)
-  const token = params.get('access_token')
-
-  if (!token) {
-    throw new Error('No access_token present in OAuth redirect URL')
-  }
-
-  return token
-}
 
 /**
  * Checks whether an offscreen document at the given path is already active.
@@ -1039,6 +847,8 @@ async function setDefaultSettings() {
   })
 
   const sync = await chrome.storage.sync.get()
+  await chrome.storage.sync.remove('mode')
+  await chrome.storage.sync.remove('user')
 
   await chrome.storage.sync.set({
     language: sync.language || 'en-US',
@@ -1140,42 +950,3 @@ async function sendMessageToCurrentTab(event) {
   }
 }
 
-// TODO(mike): Ideally use pheonix channels instead of polling.
-// When the session has a payment session and the user doesn't have any credits
-// we poll the server every 5 seconds to check if the payment has been processed.
-// If the payment session has expired, we also remove it from the session storage.
-//
-// When the payment has been processed we remove the payment session from the
-// session storage triggering a re-render of any components that depend on it.
-async function pollForPayment() {
-  console.log('Polling for payment...')
-
-  const session = await chrome.storage.session.get()
-  if (!session.paymentSession) {
-    console.log('No payment session found. Aborting poll.')
-    return
-  }
-
-  const expiryDate = new Date(session.paymentSession.expiry_date)
-
-  const interval = setInterval(async () => {
-    const currentDate = new Date(new Date().toUTCString())
-
-    if (currentDate > expiryDate) {
-      console.log('Payment session has expired. Removing payment session...')
-      await chrome.storage.session.remove('paymentSession')
-      clearInterval(interval)
-      return
-    }
-
-    console.log('Checking if payment has been processed...')
-    const user = await handlers.fetchUser()
-    if (user.credits > 0) {
-      console.log('Payment has been processed. Removing payment session...')
-      await chrome.storage.session.remove('paymentSession')
-      clearInterval(interval)
-    } else {
-      console.log('Payment has not been processed yet...')
-    }
-  }, 5000)
-}

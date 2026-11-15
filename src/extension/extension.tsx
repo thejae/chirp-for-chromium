@@ -4,8 +4,7 @@ import { useMount } from '../hooks/useMount'
 import { useTheme } from '../hooks/useTheme'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
-import { Billing } from './components/views/Billing'
-import { Usage } from './components/views/Usage'
+import { Credentials } from './components/views/Credentials'
 import { Preferences } from './components/views/Preferences'
 import { Sandbox } from './components/views/Sandbox'
 import { Logs } from './components/views/Logs'
@@ -75,8 +74,7 @@ export function Extension() {
           <Routes>
             <Route path="/preferences" element={<Preferences />} />
             <Route path="/sandbox" element={<Sandbox />} />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/usage" element={<Usage />} />
+            <Route path="/credentials" element={<Credentials />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/logs" element={<Logs />} />
           </Routes>

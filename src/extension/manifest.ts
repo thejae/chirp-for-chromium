@@ -3,15 +3,14 @@
  * Microsoft Edge.
  *
  * - `key` is always preserved in `manifest.json` so unpacked builds in
- *   Edge and Chrome keep a single deterministic Extension ID (`iefankigbnlnlaolflbcopliocibkffc`),
- *   preventing Edge from installing a duplicate extension or resetting
- *   `chrome.storage.sync` preferences on reload.
- * - `oauth2` is omitted on Edge builds because Edge uses
- *   `chrome.identity.launchWebAuthFlow` instead of the Chrome-only `oauth2` key.
+ *   Edge and Chrome keep a single deterministic Extension ID
+ *   (`iefankigbnlnlaolflbcopliocibkffc`), preventing Edge from installing a
+ *   duplicate extension or resetting `chrome.storage.sync` preferences on
+ *   reload.
+ * - The open-source extension is API-key-only and no account-sign-in manifest
+ *   entry is required.
  */
 export function createManifest(browser = process.env.BROWSER || 'chrome') {
-  const isEdge = browser === 'edge'
-
   return {
     name: 'Chirp3 for Chromium',
     description:
@@ -26,14 +25,7 @@ export function createManifest(browser = process.env.BROWSER || 'chrome') {
       'activeTab',
       'scripting',
       'offscreen',
-      'identity',
     ],
-    ...(!isEdge && {
-      oauth2: {
-        client_id: process.env.GOOGLE_OAUTH2_CLIENT_ID,
-        scopes: ['https://www.googleapis.com/auth/userinfo.email'],
-      },
-    }),
     commands: {
       readAloudShortcut: {
         suggested_key: {

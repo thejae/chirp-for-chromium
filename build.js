@@ -26,28 +26,12 @@ const packageVersion =
 // Setup environment variables for the frontend
 const SHARED_ENVIRONMENT_VARIABLES = {
   TTS_API_URL: 'https://texttospeech.googleapis.com/v1beta1',
-  GOOGLE_OAUTH2_CLIENT_ID:
-    '89959520704-p0jas87qkq9u8tmjs0d0c6sopiajl0kl.apps.googleusercontent.com',
   GOOGLE_CHROME_EXTENSION_KEY:
     'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv8jZ7956T275KyNvf6hU4JqqEb4e2sWrJXtZh2k2wR/3t36QLA+BmI3vCOxrdK8wlCmF1vs+I0NgzeYlIE27QEIjYen8s6wBM8jHAicGqSu/N9WFbJ1W3e2I5t4RmMpZXw4YtDplof6Niy7mcFoCwKuUKxkH14WjOLSn+eQSsV2QoFePua0qGypmxCsoZ0nJleshRPd/5y52/xJTTlQ3USgQZuwc37nTzxEI34XXlV/N3lrJtJFJ6uLFqgU8FNFBozsrmTcrVnieLBSsMpqG8+EpKbeJoEK02xr6N4YOhXBFqSQ6jXJ5+E7PQNJmenOwa8w2VSIMVXtnOG0XFPfQtwIDAQAB',
   npm_package_version: packageVersion,
 }
 
-const PRODUCTION_ENVIRONMENT_VARIABLES = {
-  ENVIRONMENT: 'production',
-  BACKEND_URL: 'https://api.wavenet-for-chrome.com/v1',
-}
-
-const DEVELOPMENT_ENVIRONMENT_VARIABLES = {
-  ENVIRONMENT: 'development',
-  BACKEND_URL:
-    process.env.BACKEND_URL || 'https://api.wavenet-for-chrome.com/v1',
-}
-
-const BASE_ENVIRONMENT_VARIABLES =
-  environment === 'production'
-    ? { ...SHARED_ENVIRONMENT_VARIABLES, ...PRODUCTION_ENVIRONMENT_VARIABLES }
-    : { ...SHARED_ENVIRONMENT_VARIABLES, ...DEVELOPMENT_ENVIRONMENT_VARIABLES }
+const BASE_ENVIRONMENT_VARIABLES = SHARED_ENVIRONMENT_VARIABLES
 
 process.env = { ...process.env, ...BASE_ENVIRONMENT_VARIABLES }
 

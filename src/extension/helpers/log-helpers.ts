@@ -19,7 +19,6 @@ function redactSecrets(input: string): string {
   return input
     .replace(/([?&]key=)[^&\s"]+/gi, '$1[REDACTED]')
     .replace(/(Bearer\s+)[^\s"]+/gi, '$1[REDACTED]')
-    .replace(/("secret_key"\s*:\s*")[^"]+"/gi, '$1[REDACTED]"')
     .replace(/("apiKey"\s*:\s*")[^"]+"/gi, '$1[REDACTED]"')
 }
 

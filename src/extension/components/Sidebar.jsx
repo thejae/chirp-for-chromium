@@ -1,9 +1,7 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  BarChart,
   Box,
-  CreditCard,
   GitHub,
   HelpCircle,
   Key,
@@ -23,10 +21,7 @@ export function Sidebar() {
 
   if (!ready) return null
 
-  const sandboxDisabled =
-    (sync.mode === 'free' && !sync.apiKeyValid) ||
-    (sync.mode === 'paid' && !sync.user?.credits)
-  const usageDisabled = sync.mode === 'free' || !sync.user
+  const sandboxDisabled = !sync.apiKeyValid
 
   return (
     <nav
@@ -59,25 +54,16 @@ export function Sidebar() {
           color="bg-purple-500"
           to="/sandbox"
           disabled={sandboxDisabled}
-          disabledReason="Add a valid API key or purchase credits to test voices in the Sandbox"
+          disabledReason="Add a valid Google Cloud API key to test voices in the Sandbox"
         >
           Sandbox
         </Sidebar.Item>
         <Sidebar.Item
-          Icon={sync.mode === 'paid' ? CreditCard : Key}
+          Icon={Key}
           color="bg-emerald-600"
-          to="/billing"
+          to="/credentials"
         >
-          {sync.mode === 'paid' ? 'Billing' : 'Credentials'}
-        </Sidebar.Item>
-        <Sidebar.Item
-          Icon={BarChart}
-          color="bg-sky-500"
-          to="/usage"
-          disabled={usageDisabled}
-          disabledReason="Usage history is available when signed in with purchased credits"
-        >
-          Usage
+          Credentials
         </Sidebar.Item>
         <Sidebar.Item Icon={Settings} color="bg-amber-600" to="/settings">
           Settings

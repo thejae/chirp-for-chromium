@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.13.0] - 2026-11-15
+
+### Removed
+- **Paid mode, credits, invoices, account sign-in, OAuth, and proprietary backend dependencies**: The extension no longer has Billing/Usage screens, payment sessions, credit balance flows, Google OAuth authentication, or backend API calls.
+- Deleted paid UI/helpers and stale docs copy: `Billing.tsx`, `Usage.tsx`, `PricingTable.jsx`, paid `Notice` copy, credit/date formatting helper, website paid changelog entry, paid-version asset, Stripe/payment privacy references, and README/backend setup instructions.
+
+### Changed
+- **API-key-only operation**: The extension now uses only the user's Google Cloud Text-to-Speech API key for voice discovery and synthesis via direct `TTS_API_URL` endpoints.
+- Replaced the Billing route with a Credentials view, updated navigation/onboarding to focus on API-key verification, removed paid-mode storage handling, and configured the Chrome/Edge builds without `BACKEND_URL` or OAuth client env vars.
+
 ## [13.12.1] - 2026-11-15
 
 ### Changed
@@ -138,17 +148,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Speed preset chips (`0.75×`, `1×`, `1.25×`, `1.5×`, `2×`) and one-click reset-to-default on `Range.jsx` sliders.
 - Show/hide password toggle on `Text.jsx` for Google Cloud API key entry in `ApiKey.tsx`.
 - Keyboard-dismissible (`Escape`) `Dialog.tsx` with ARIA dialog semantics, plus combobox/listbox ARIA roles and `useId()` label bindings across `Dropdown.jsx`, `Range.jsx`, `Text.jsx`, and `Textarea.jsx`.
-- Inline `HowToUseTip` and keyboard shortcut reference in `Preferences.tsx`, `Billing.tsx`, and `OnboardingDialog.tsx`.
+- Inline `HowToUseTip` and keyboard shortcut reference in `Preferences.tsx`, `Credentials.tsx`, and `OnboardingDialog.tsx`.
 
 ### Changed
 - Renamed the mislabeled `"Credentials"` section header in `Preferences.tsx` to `"Voice & speech"`, reordered `Sidebar.jsx` around audio workflows first, and compacted the sidebar width (`w-44`) to give the main view more space.
 - Placed advanced DSP and codec settings (`Device EQ profile`, `Voice pitch`, `Volume gain`, `Download/Streaming format`) inside a progressive-disclosure panel in `Preferences.tsx`.
 - Raised `text-xxs` from `10px` to `11px` (`0.6875rem`), refined section heading hierarchy, added `prefers-reduced-motion` support, and replaced overshoot bounce/timer animations with smooth exponential easing.
-- Simplified `PricingTable.jsx` around human-readable capacity for the `$9.75` credit pack with `tabular-nums`.
-
 ### Fixed
-- Imported missing `isError` helper in `OnboardingDialog.tsx` to prevent a `ReferenceError` when payment session creation fails.
-- Wired `loadingUser` and `loadingUsage` loading states and list `key` props in `Usage.tsx` to prevent flashing `$0.00` credits and `"No usage yet"`.
 - Fixed `Dropdown.jsx` firing `onChange` on raw search keystrokes and replaced `document.querySelector` with a container-scoped ref.
 - Fixed invalid API key validation message in `Sandbox.tsx` to reference `Credentials` instead of `preferences`.
 
@@ -156,10 +162,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Microsoft Edge compatibility for both unpacked development loading (`npm run start:extension:edge`) and Microsoft Edge Add-ons store packaging (`npm run build:extension:edge`).
-- Google OAuth2 authentication fallback via `chrome.identity.launchWebAuthFlow` in `src/extension/service-worker.ts` for browsers where `chrome.identity.getAuthToken` is unsupported (such as Microsoft Edge).
 - Offscreen document detection via `chrome.runtime.getContexts` before falling back to `clients.matchAll()`.
 - Browser-aware shortcut settings navigation (`edge://extensions/shortcuts` on Edge, `chrome://extensions/shortcuts` on Chrome).
 
 ### Changed
 - Adopted standard 3-part SemVer version (`13.1.0`) required by Microsoft Edge Add-ons Partner Center.
-- Standardized Manifest V3 icon definitions (`16`, `19`, `38`, `48`, `128`) and conditionally omitted Chrome-specific `oauth2` and store-rejected `key` fields on Edge builds.
+- Standardized Manifest V3 icon definitions (`16`, `19`, `38`, `48`, `128`) and omitted store-rejected `key` fields on Edge builds.
