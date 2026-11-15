@@ -1,13 +1,8 @@
-import { initializeSentry } from './helpers/sentry-helpers'
-
 // Local variables -------------------------------------------------------------
 let audioElement = new Audio()
 let shouldPlay = false
 let audioContext: AudioContext | null = null
 let currentPlayResolver: ((value: any) => void) | null = null
-
-// Bootstrap -------------------------------------------------------------------
-initializeSentry()
 
 /**
  * Decodes a data URI's audio buffer to obtain the exact duration in seconds

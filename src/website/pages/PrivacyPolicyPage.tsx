@@ -10,43 +10,13 @@ export function PrivacyPolicyPage() {
         <section className="mb-6">
           <h2 className="text-2xl font-bold mb-2">1. Introduction</h2>
           <p>
-            Please read this Privacy Policy to learn about how we collect, use,
-            and share your information while using the extension.
+            Please read this Privacy Policy to learn about how we handle and
+            share your information while using the extension.
           </p>
         </section>
 
         <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">2. Information We Collect</h2>
-          <ul className="list-disc">
-            <li>
-              <strong>Automatically Collected Information:</strong> We collect
-              error reports when the extension fails, so we can help diagnose
-              issues and keep the extension working.
-            </li>
-          </ul>
-        </section>
-
-        <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">
-            3. How We Use Your Information
-          </h2>
-          <p>We use the collected information for the following purposes:</p>
-          <ul className="list-disc">
-            <li>
-              To gather analytics and understand how our users interact with the
-              application. This aids in determining features to be added and
-              understanding our customer base.
-            </li>
-            <li>
-              To collect error reports and address any potential issues,
-              ensuring our service runs smoothly and efficiently.
-            </li>
-
-          </ul>
-        </section>
-
-        <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">4. Information Sharing</h2>
+          <h2 className="text-2xl font-bold mb-2">2. Information Sharing</h2>
           <p>
             We only share data with these third parties to the extent necessary
             for the functionality of our service and for the purposes stated in
@@ -63,20 +33,11 @@ export function PrivacyPolicyPage() {
               : Necessary for the primary function of our extension to
               synthesize text for playback or download.
             </li>
-            <li>
-              <a
-                href="https://sentry.io/"
-                className="text-blue-600 hover:underline font-bold"
-              >
-                Sentry
-              </a>
-              : For the purpose of collecting and analyzing error reports.
-            </li>
           </ul>
         </section>
 
         <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">5. Data Security</h2>
+          <h2 className="text-2xl font-bold mb-2">3. Data Security</h2>
           <p>
             Your data is important to us and we have implemented measures to
             ensure its security. However, no method of data transmission or
@@ -87,7 +48,7 @@ export function PrivacyPolicyPage() {
 
         <section className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
-            6. Changes to Our Privacy Policy
+            4. Changes to Our Privacy Policy
           </h2>
           <p>
             We may update this privacy policy from time to time. We will notify
@@ -98,7 +59,7 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">7. Contact Us</h2>
+          <h2 className="text-2xl font-bold mb-2">5. Contact Us</h2>
           <p>
             If you have any questions about this privacy policy or our
             practices, please contact us. Preferred method of contact is by

@@ -1,6 +1,5 @@
 import './helpers/text-helpers.js'
 import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
-import { initializeSentry } from './helpers/sentry-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
 import { getCurrentVoice } from './helpers/voice-helpers.js'
 import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
@@ -57,8 +56,7 @@ async function endPlaybackSession() {
 }
 
 // Bootstrap -------------------------------------------------------------------
-initializeSentry()
-;(async function Bootstrap() {
+(async function Bootstrap() {
   await setDefaultSettings()
   await appendLog('INFO', 'Service worker bootstrapping…')
   try {
