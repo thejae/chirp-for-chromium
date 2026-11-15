@@ -1,7 +1,11 @@
-import winkNLP from 'wink-nlp'
-import model from 'wink-eng-lite-web-model'
-
-const nlp = winkNLP(model)
+// Sentence segmentation comes from the platform's ICU rules, which the
+// extension already relies on elsewhere (`Intl.Segmenter` for word timing and
+// `Intl.DisplayNames` for language names); it replaces wink, whose English
+// model alone cost 4.2 MB in the service worker bundle.
+const sentenceSegmenter =
+  typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
+    : null
 const CJK_REGEX = /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]/
 const MAX_SENTENCE_CHARS = 80
 const MAX_CJK_SENTENCE_CHARS = 35
@@ -113,8 +117,14 @@ String.prototype.chunk = function () {
     .filter(Boolean)
 
   const rawSentences = linesAndCjkSentences.flatMap((segment) => {
-    const winkSentences = nlp.readDoc(segment).sentences().out('array')
-    return winkSentences.length ? winkSentences : [segment]
+    const sentences = sentenceSegmenter
+      ? Array.from(
+          sentenceSegmenter.segment(segment),
+          (part) => part.segment,
+        )
+      : segment.split(/(?<=[.!?])\s+/)
+    const cleaned = sentences.map((sentence) => sentence.trim()).filter(Boolean)
+    return cleaned.length ? cleaned : [segment]
   })
 
   return rawSentences.flatMap(splitLongSentence).filter(Boolean)

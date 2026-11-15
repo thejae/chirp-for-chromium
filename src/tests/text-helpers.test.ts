@@ -90,4 +90,25 @@ describe('splitLongSentence', () => {
       }
     },
   )
+
+  test(
+    'chunk() breaks real page text at boundaries the API accepts',
+    () => {
+      const text =
+        'Dr. Smith arrived at 3.14 p.m. near the U.S. border. He said: "Leave now!" ' +
+        'The WHO (World Health Organization) issued guidance - plain, practical, ' +
+        'and clear - for everyone.'
+
+      const pieces = text.chunk()
+      expect(pieces.length).toBe(7)
+      for (const piece of pieces) {
+        expect(piece.length).toBeLessThanOrEqual(MAX_SENTENCE_CHARS + 1)
+      }
+
+      // Abbreviations end a sentence for the platform's ICU rules, but must
+      // never swallow the clause that follows them.
+      expect(pieces[0]).toBe('Dr.')
+      expect(pieces.some((piece) => piece.includes('3.14 p.m.'))).toBe(true)
+    },
+  )
 })
