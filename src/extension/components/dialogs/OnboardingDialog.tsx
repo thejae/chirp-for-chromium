@@ -1,3 +1,4 @@
+import React from 'react'
 import { Dialog } from '../../../components/Dialog.js'
 import { FreeNotice, HowToUseTip } from '../copy/Notice.jsx'
 import { ApiKeyForm } from '../forms/ApiKey.js'
