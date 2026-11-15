@@ -34,6 +34,28 @@ async function updatePlaybackSessionState() {
   })
 }
 
+/**
+ * Ends the current playback session: clears the local state, stores it,
+ * refreshes the context menus, and stops any in-page highlighting. Every exit
+ * path of readAloud and stopReading must run the same reset, so it lives here.
+ */
+async function endPlaybackSession() {
+  playing = false
+  paused = false
+  totalChunks = 0
+  currentChunkIndex = 0
+  currentChunkDuration = 0
+  activeChunkText = ''
+  chunkLengths = []
+  totalChars = 0
+  completedChars = 0
+  await updatePlaybackSessionState()
+  updateContextMenus()
+  if (highlightingEnabled) {
+    await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
+  }
+}
+
 // Bootstrap -------------------------------------------------------------------
 initializeSentry()
 ;(async function Bootstrap() {
@@ -165,20 +187,7 @@ export const handlers = {
     while (queue.length) {
       if (cancellationToken) {
         cancellationToken = false
-        playing = false
-        paused = false
-        totalChunks = 0
-        currentChunkIndex = 0
-        currentChunkDuration = 0
-        activeChunkText = ''
-    chunkLengths = []
-    totalChars = 0
-    completedChars = 0
-        await updatePlaybackSessionState()
-        updateContextMenus()
-        if (highlightingEnabled) {
-          await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
-        }
+        await endPlaybackSession()
         return
       }
 
@@ -202,20 +211,7 @@ export const handlers = {
             : await prefetchQueue.shift()
 
         if (isError(audioUri)) {
-          playing = false
-          paused = false
-          totalChunks = 0
-          currentChunkIndex = 0
-          currentChunkDuration = 0
-          activeChunkText = ''
-    chunkLengths = []
-    totalChars = 0
-    completedChars = 0
-          await updatePlaybackSessionState()
-          updateContextMenus()
-          if (highlightingEnabled) {
-            await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
-          }
+          await endPlaybackSession()
           return audioUri
         }
 
@@ -229,20 +225,7 @@ export const handlers = {
       } catch (e: any) {
         console.warn('Failed to play audio', e)
         await appendLog('WARN', 'Audio playback interrupted or failed', e?.message)
-        playing = false
-        paused = false
-        totalChunks = 0
-        currentChunkIndex = 0
-        currentChunkDuration = 0
-        activeChunkText = ''
-    chunkLengths = []
-    totalChars = 0
-    completedChars = 0
-        await updatePlaybackSessionState()
-        updateContextMenus()
-        if (highlightingEnabled) {
-          await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
-        }
+        await endPlaybackSession()
 
         // Audio playback may have failed because the user stopped playback, or
         // called the readAloud function again. We need to return early to avoid
@@ -254,20 +237,7 @@ export const handlers = {
       count++
     }
 
-    playing = false
-    paused = false
-    totalChunks = 0
-    currentChunkIndex = 0
-    currentChunkDuration = 0
-    activeChunkText = ''
-    chunkLengths = []
-    totalChars = 0
-    completedChars = 0
-    await updatePlaybackSessionState()
-    updateContextMenus()
-    if (highlightingEnabled) {
-      await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
-    }
+    await endPlaybackSession()
     await appendLog('INFO', 'Finished reading aloud all chunks')
     return Promise.resolve(true)
   },
@@ -337,20 +307,7 @@ export const handlers = {
 
     cancellationToken = true
     queue = []
-    playing = false
-    paused = false
-    totalChunks = 0
-    currentChunkIndex = 0
-    currentChunkDuration = 0
-    activeChunkText = ''
-    chunkLengths = []
-    totalChars = 0
-    completedChars = 0
-    await updatePlaybackSessionState()
-    updateContextMenus()
-    if (highlightingEnabled) {
-      await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
-    }
+    await endPlaybackSession()
 
     try {
       await createOffscreenDocument()
