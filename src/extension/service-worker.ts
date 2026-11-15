@@ -127,11 +127,6 @@ chrome.runtime.onInstalled.addListener(async function (details) {
       url: 'https://github.com/thejae/chirp-for-chromium/blob/master/CHANGELOG.md',
     })
   }
-
-  if (details.reason === 'install' || details.reason === 'update') {
-    await chrome.storage.sync.remove('mode')
-    await chrome.storage.sync.remove('user')
-  }
 })
 
 // Handlers --------------------------------------------------------------------
@@ -820,8 +815,6 @@ async function setDefaultSettings() {
   })
 
   const sync = await chrome.storage.sync.get()
-  await chrome.storage.sync.remove('mode')
-  await chrome.storage.sync.remove('user')
 
   await chrome.storage.sync.set({
     language: sync.language || 'en-US',
