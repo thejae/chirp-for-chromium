@@ -23,7 +23,8 @@ export function MiniPlayer() {
   const activeText = session?.activeChunkText?.trim() || ''
 
   // Format active voice name cleanly (e.g., 'en-US-Journey-F' -> 'Journey F')
-  const rawVoiceName = sync?.voice || ''
+  // The chosen voice lives in the per-language map, not on a `voice` key.
+  const rawVoiceName = sync?.voices?.[sync?.language] || ''
   const displayVoiceName =
     rawVoiceName
       .replace(/^[a-z]{2,3}-[A-Z]{2}-/, '')
