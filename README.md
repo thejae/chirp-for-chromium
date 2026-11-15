@@ -4,7 +4,7 @@
 
 **Turn any highlighted webpage text into natural Google Cloud Chirp3 & WaveNet speech — with live in-page tracking, pause/resume, and MP3/OGG/PCM export.**
 
-![Version](https://img.shields.io/badge/version-13.13.1-2563eb?style=flat-square)
+![Version](https://img.shields.io/badge/version-13.13.2-2563eb?style=flat-square)
 ![Browsers](https://img.shields.io/badge/browsers-Chrome%20%26%20Edge%20(MV3)-10b981?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-neutral?style=flat-square)
 

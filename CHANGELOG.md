@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.13.2] - 2026-11-15
+
+### Fixed
+- **Long Downloads No Longer Come Back Empty**: a 20,000-character paste used to fire ~250 synthesis requests at once, Google rejected much of that burst with `429`, and the download produced no file at all while still billing every call. Chunks are now synthesized a few at a time and stitched together in order.
+- **A Failed Chunk Ends Reading Instead of Freezing It**: any request failure left the popup stuck on "Reading" with the page highlight never cleared. Sessions now tear down on the first failure and tell you it failed.
+- **Your Selection Is No Longer Spoken Twice**: opening the popup (auto-read) and right-clicking "Read aloud" within a second of each used to play the same text twice. A read-aloud session is now claimed before anything else can start.
+- **No Repeated Words on Long Sentences**: a clause that hit the API's sentence limit exactly was synthesized and spoken twice.
+- **Docked Player Shows the Voice You Actually Chose**: the player badge always read "Default" regardless of the voice picked in **Voice & speech**.
+- **Voice & speech Survives Obscure Languages**: languages the browser doesn't recognise (`zh-YUE`, `haw-US-HAW`) replaced the voice list with a generic "Something went wrong" screen. They now fall back to their raw language code.
+- **Right-Click Menu Tracks Reading State**: the Read / Stop / Download menu items used to describe a session that had already finished, because the menu refresh raced the player state.
+- **Opening a Dialog No Longer Clears Your Highlight**: opening the onboarding or keyboard-shortcut dialog discarded whatever text you had selected on the page.
+- **Release Archives Load Again**: uploaded zips buried `manifest.json` inside a `dist/` folder, so the Chrome Web Store and Edge Addons rejected every upload. `manifest.json` is now at the archive root.
+
+### Changed
+- **One Voice Resolution per Session**: the voice used to be re-resolved for every sentence, which made a 40-sentence page re-index several hundred voices 40 times before the first byte of audio played. It is now resolved once per session, so changing the voice while audio is playing keeps that session on one voice.
+- **Sentences Are Split by the Browser**: sentence detection no longer depends on `wink-nlp`; the platform's own language rules are used instead, and `chunk()` was verified to produce identical output on abbreviation-heavy ("Dr.", "U.S.", "3.14 p.m."), CJK, SSML and run-on samples.
+- **Highlighting Work Cut Down**: the read-aloud page highlight no longer rebuilds the selection text per chunk or a fresh set of overlay elements on every scroll and resize, which used to make long pages stutter while reading.
+- **Website and In-App Links Point at This Fork**: the install buttons and sidebar no longer send you to the upstream paid Chrome Web Store listing, and the site's name, copy and privacy contact speak for Chirp3 for Chromium.
+- **Smaller, Faster Extension**: built code ships minified, which took the download from 6.9 MB to 1.2 MB per browser build (the archives went from 1.5 MB to 375 KB). Nothing you can see in the interface changes.
+
+### Removed
+- **Sentry Error Reporting**: the extension no longer uploads errors to a third-party account (the compiled-in reporting address belonged to the upstream author's project, which this fork cannot see, redact, or delete). Failures are still logged inside the extension's **Logs** view, which keeps the details on your machine. The privacy policy no longer lists Sentry as a recipient.
+- **Dead Weight and Dead Code**: unused dependencies (`dotenv`, `esbuild`, `process`, `wink-nlp`, `wink-eng-lite-web-model`), leftovers from the paid account mode removed in v13.13.0, the sidebar's upstream store link, and 13.9 MB of upstream release archives that had been committed by mistake.
+
+### Added
+- **Tests for the Risky Paths**: `bun test` now covers sentence chunking, audio-file merging and word timing — the places a bad result used to show up only as a user complaint (14 tests, 58 assertions).
+
 ## [13.13.1] - 2026-11-15
 
 ### Fixed
