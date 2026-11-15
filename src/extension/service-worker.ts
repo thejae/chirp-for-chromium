@@ -1,7 +1,7 @@
 import './helpers/text-helpers.js'
 import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
-import { getCurrentVoice } from './helpers/voice-helpers.js'
+import { resolveVoices } from './helpers/voice-helpers.js'
 import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
 
 // Local state -----------------------------------------------------------------
@@ -167,6 +167,9 @@ export const handlers = {
     let count = 0
     const sync = await chrome.storage.sync.get()
     const encoding = sync.readAloudEncoding
+    // Resolve the voice pair once per session: a chunk loop would otherwise
+    // re-read settings and re-index the whole voice list for every sentence.
+    const voices = resolveVoices(await chrome.storage.session.get(), sync)
     highlightingEnabled =
       highlight !== false && sync.highlightSpokenWords !== false
     if (highlightingEnabled) {
@@ -194,13 +197,15 @@ export const handlers = {
       const nextText = queue[0]
 
       if (nextText) {
-        prefetchQueue.push(this.getAudioUri({ text: nextText, encoding }))
+        prefetchQueue.push(
+          this.getAudioUri({ text: nextText, encoding, voices }),
+        )
       }
 
       try {
         const audioUri =
           count === 0
-            ? await this.getAudioUri({ text, encoding })
+            ? await this.getAudioUri({ text, encoding, voices })
             : await prefetchQueue.shift()
 
         if (isError(audioUri)) {
@@ -401,10 +406,9 @@ export const handlers = {
 
     return this.download({ text: selection })
   },
-  synthesize: async function ({ text, encoding }) {
+  synthesize: async function ({ text, encoding, voices }) {
     console.log('Synthesizing text...', { text, encoding })
 
-    const session = await chrome.storage.session.get()
     const sync = await chrome.storage.sync.get()
     const key = sync.apiKey
 
@@ -442,32 +446,23 @@ export const handlers = {
 
     const rawContent = text || ssml || ''
     const hasCjk = /[\u3400-\u9fff]/.test(rawContent)
-    let voiceLanguageCode = sync.language || 'en-US'
-    let voiceName = getCurrentVoice(session, sync)
 
-    // Non-CJK Chirp3/Journey voices (such as en-US-Chirp3-HD-*) reject Chinese
-    // ideographs with `Sentence starting with: "⟪..." is too long`. Automatically
-    // switch to a Mandarin voice for chunks containing Chinese characters.
-    if (hasCjk && !/^(cmn|zh|yue|ja|ko)-/i.test(voiceLanguageCode)) {
-      voiceLanguageCode = 'cmn-CN'
-      const persona = voiceName?.includes('-Chirp3-HD-')
-        ? voiceName.split('-Chirp3-HD-')[1]
-        : null
-      const candidateChirp = persona ? `cmn-CN-Chirp3-HD-${persona}` : null
-      const availableNames = new Set(
-        (session.voices || []).map((v: any) => v.name),
-      )
-
-      if (candidateChirp && availableNames.has(candidateChirp)) {
-        voiceName = candidateChirp
-      } else if (sync.voices?.['cmn-CN']) {
-        voiceName = sync.voices['cmn-CN']
-      } else if (availableNames.has('cmn-CN-Wavenet-A')) {
-        voiceName = 'cmn-CN-Wavenet-A'
-      } else {
-        voiceName = candidateChirp || 'cmn-CN-Wavenet-A'
-      }
+    // Chunk loops hand us a pair resolved once per session; a standalone call
+    // (sandbox, single-shot download) resolves it here exactly once instead.
+    let resolution = voices
+    if (!resolution) {
+      const session = await chrome.storage.session.get()
+      resolution = resolveVoices(session, sync)
     }
+
+    // Chinese ideographs need the Mandarin voice resolved alongside the
+    // configured one, because Chirp3/Journey voices reject them outright.
+    const useCjkVoice = hasCjk && Boolean(resolution.cjkVoiceName)
+    const voiceLanguageCode =
+      useCjkVoice ? resolution.cjkLanguageCode : resolution.languageCode
+    const voiceName = useCjkVoice
+      ? resolution.cjkVoiceName
+      : resolution.voiceName
 
     const buildRequestBody = (overrideVoice?: string, overrideLang?: string) =>
       JSON.stringify({
@@ -572,11 +567,20 @@ export const handlers = {
       return error
     }
   },
-  getAudioUri: async function ({ text, encoding }) {
+  getAudioUri: async function ({ text, encoding, voices }) {
     console.log('Getting audio URI...', { text, encoding })
 
     const chunks = text.chunk()
     console.log('Chunked text into', chunks.length, 'chunks', chunks)
+
+    // Reuse the pair the Read Aloud session already resolved; a standalone
+    // download resolves once here and shares it across its chunks.
+    let resolution = voices
+    if (!resolution) {
+      const session = await chrome.storage.session.get()
+      const sync = await chrome.storage.sync.get()
+      resolution = resolveVoices(session, sync)
+    }
 
     // Google answers bursts of simultaneous synthesize calls with 429s, which
     // used to fail the whole download; keep only a few requests in flight.
@@ -587,7 +591,13 @@ export const handlers = {
         ...await Promise.all(
           chunks
             .slice(i, i + batchSize)
-            .map((chunk) => this.synthesize({ text: chunk, encoding })),
+            .map((chunk) =>
+              this.synthesize({
+                text: chunk,
+                encoding,
+                voices: resolution,
+              }),
+            ),
         ),
       )
     }

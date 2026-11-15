@@ -69,3 +69,43 @@ export function getCurrentVoice(session, sync) {
 
   return sync.voices[sync.language] || voiceOptions[0]?.value
 }
+
+/**
+ * Resolves the voice pair a chunk loop needs once instead of once per chunk:
+ * the configured voice, plus the Mandarin voice to use for chunks that carry
+ * Chinese ideographs (Chirp3/Journey voices reject those outright). Building
+ * the voice options and the availability index costs hundreds of comparisons,
+ * so Read Aloud pays this cost once per session and hands the pair to every
+ * chunk.
+ */
+export function resolveVoices(session, sync) {
+  const languageCode = sync.language || 'en-US'
+  const voiceName = getCurrentVoice(session, sync)
+
+  const isCjkLanguage = /^(cmn|zh|yue|ja|ko)-/i.test(languageCode)
+  let cjkVoiceName: string | null = null
+  if (!isCjkLanguage) {
+    const availableNames = new Set(
+      (session.voices || []).map((voice: any) => voice.name),
+    )
+    const persona = voiceName?.includes('-Chirp3-HD-')
+      ? voiceName.split('-Chirp3-HD-')[1]
+      : null
+    const candidateChirp = persona ? `cmn-CN-Chirp3-HD-${persona}` : null
+
+    cjkVoiceName =
+      candidateChirp && availableNames.has(candidateChirp)
+        ? candidateChirp
+        : sync.voices?.['cmn-CN'] ||
+          (availableNames.has('cmn-CN-Wavenet-A')
+            ? 'cmn-CN-Wavenet-A'
+            : candidateChirp || 'cmn-CN-Wavenet-A')
+  }
+
+  return {
+    languageCode,
+    voiceName,
+    cjkLanguageCode: isCjkLanguage ? languageCode : 'cmn-CN',
+    cjkVoiceName,
+  }
+}
