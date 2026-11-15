@@ -40,7 +40,7 @@ function ensureTerminalPunctuation(sentence) {
  * Splits a single sentence into smaller clauses below `maxChars` so Google
  * Cloud TTS Chirp3 never throws "sentences that are too long".
  */
-function splitLongSentence(sentence) {
+export function splitLongSentence(sentence) {
   const normalized = normalizeTextForTts(sentence)
   if (!normalized) return []
 

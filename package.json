@@ -10,7 +10,8 @@
     "build:extension:chrome": "bun run build.js --environment=production --browser=chrome",
     "build:extension:edge": "bun run build.js --environment=production --browser=edge",
     "start:website": "parcel src/website/index.html --dist-dir dist-website",
-    "build:website": "parcel build src/website/index.html --dist-dir dist-website"
+    "build:website": "parcel build src/website/index.html --dist-dir dist-website",
+    "test": "bun test"
   },
   "author": "Michael Poirier-Ginter <michael.poirierginter@gmail.com>",
   "license": "MIT",
