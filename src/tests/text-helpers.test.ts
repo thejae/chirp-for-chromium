@@ -111,4 +111,53 @@ describe('splitLongSentence', () => {
       expect(pieces.some((piece) => piece.includes('3.14 p.m.'))).toBe(true)
     },
   )
+
+  test(
+    'preserves native sentence-final punctuation and clause commas for prosody',
+    () => {
+      // Regression: every native terminal mark was collapsed to an ASCII
+      // period and every native comma to a spaced ASCII comma, flattening
+      // questions/exclamations into statements and adding a fake beat after
+      // each comma. The exact marks must reach the TTS engine intact.
+      expect(splitLongSentence('你好，世界！')).toEqual(['你好，世界！'])
+      expect(splitLongSentence('今天天气怎么样？')).toEqual([
+        '今天天气怎么样？',
+      ])
+      expect(splitLongSentence('太好了！')).toEqual(['太好了！'])
+      expect(splitLongSentence('首先，其次，最后。')).toEqual([
+        '首先，其次，最后。',
+      ])
+      expect(splitLongSentence('Wait, what?! Really!')).toEqual([
+        'Wait, what?!',
+        'Really!',
+      ])
+    },
+  )
+
+  test(
+    'keeps native commas tight and converts only decorative brackets',
+    () => {
+      // Regression: normalizeTextForTts inserted a space after every comma,
+      // splitting "1,000" into two spoken numbers. Commas inside a chunk must
+      // stay attached to the following character; CJK enumeration (、) stays
+      // native where the engine understands it.
+      expect(splitLongSentence('It cost 1,000 dollars today')).toEqual([
+        'It cost 1,000 dollars today.',
+      ])
+      expect(splitLongSentence('苹果、香蕉和橙子')).toEqual(['苹果、香蕉和橙子。'])
+      expect(splitLongSentence('「你好」')).toEqual(['你好。'])
+    },
+  )
+
+  test(
+    'keeps consecutive native marks with the sentence they finish',
+    () => {
+      // "？！" is a normal emphatic question in Chinese. Splitting between the
+      // two marks would send a bare "！" to TTS as its own chunk.
+      expect(splitLongSentence('真的吗？！你说什么？！')).toEqual([
+        '真的吗？！',
+        '你说什么？！',
+      ])
+    },
+  )
 })

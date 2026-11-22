@@ -10,34 +10,58 @@ const CJK_REGEX = /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\
 const MAX_SENTENCE_CHARS = 80
 const MAX_CJK_SENTENCE_CHARS = 35
 
+// Native marks carry prosody an ASCII full stop cannot: `？` rises at the end,
+// `！` is emphatic, and `，` / `、` ask for a short beat without a word break.
+// Keep them as written for every script the engine understands (CJK, Arabic,
+// Devanagari, Ethiopic), not just for Chinese. Only synthesize a full stop
+// when the author left the sentence unterminated.
+const TERMINAL_PUNCTUATION = /[.!?。！？…；؟।።]$/
+const CLAUSE_PUNCTUATION = /[，,、：:،]+$/
+const CLAUSE_SPLIT = /(?<=[，,、：:،—])\s*/
+// A run of terminal marks (`？！`, `?!`) finishes one sentence: only split
+// after the whole run, and only when native text follows without a space.
+const SENTENCE_BREAK =
+  /(?<=[。！？；؟।።](?![。！？；؟।።]))\s*|(?<=[.!?](?![.!?]))\s+/
+
 /**
  * Normalizes decorative CJK brackets and quotation symbols (such as 『』, 「」,
  * 【】, 《》, ⟪⟫) into ASCII period sentence breaks so Google Cloud TTS Chirp3
  * voices never fail with `Sentence starting with: "⟪..." is too long`.
+ *
+ * It deliberately leaves the author's punctuation alone: earlier versions
+ * rewrote `。！？` to `.` and `，、：` to `, `, which flattened questions and
+ * exclamations into statements and inserted a fake word break after every
+ * comma. Neither rewrite is needed for the bracket-length error.
  */
 function normalizeTextForTts(input) {
   return input
     .replace(/[『「【〖〔《〈⟪［｛“‘「]+/g, ' ')
-    .replace(/[』」】〗〕》〉⟫］｝”’」]+/g, '. ')
-    .replace(/[。！？；]+/g, '. ')
-    .replace(/[，、：]+/g, ', ')
+    .replace(/[』」】〗〕》〉⟫］｝”’」]+/g, (match, offset, text) =>
+      CJK_REGEX.test(text.slice(0, offset)) ? '。' : '. ',
+    )
     .replace(/\s+/g, ' ')
     .trim()
 }
 
 /**
- * Ensures a plain-text sentence ends with an ASCII terminal punctuation mark
- * (`.`, `!`, or `?`) because Google Cloud TTS Chirp3's sentence-length
- * validator specifically checks for ASCII periods.
+ * Ensures a plain-text sentence ends with a terminal punctuation mark. Google
+ * Cloud TTS Chirp3's sentence-length validator needs a full stop on chunks we
+ * had to synthesize ourselves, but an author's native mark is kept exactly as
+ * written (and a trailing clause comma is dropped rather than followed by a
+ * synthesized full stop).
  */
 function ensureTerminalPunctuation(sentence) {
-  const trimmed = sentence
-    .trim()
-    .replace(/[，,；;：:、。]+$/g, '')
-    .trim()
+  const trimmed = sentence.trim()
   if (!trimmed) return ''
-  if (/[.!?]$/.test(trimmed)) return trimmed
-  return `${trimmed}.`
+  if (TERMINAL_PUNCTUATION.test(trimmed)) return trimmed
+  const withoutTrailingComma = trimmed.replace(CLAUSE_PUNCTUATION, '').trim()
+  if (!withoutTrailingComma) return ''
+  if (TERMINAL_PUNCTUATION.test(withoutTrailingComma)) return withoutTrailingComma
+  // A run with native ideographs gets a native full stop; an ASCII/latin run
+  // keeps the ASCII full stop Chirp3's sentence validator expects.
+  return CJK_REGEX.test(withoutTrailingComma)
+    ? `${withoutTrailingComma}。`
+    : `${withoutTrailingComma}.`
 }
 
 /**
@@ -48,9 +72,10 @@ export function splitLongSentence(sentence) {
   const normalized = normalizeTextForTts(sentence)
   if (!normalized) return []
 
-  // First split on any periodbreaks introduced by bracket/CJK normalization
+  // Split on native and ASCII sentence-final marks, including the ASCII
+  // full stops introduced by bracket normalization (`「你好」`).
   const subSentences = normalized
-    .split(/(?<=[.!?])\s+/)
+    .split(SENTENCE_BREAK)
     .map((s) => s.trim())
     .filter(Boolean)
 
@@ -68,7 +93,7 @@ export function splitLongSentence(sentence) {
     }
 
     // Split by clause separators (commas, colons, enumeration commas, dashes)
-    const clauses = sub.split(/(?<=[，,：:、—])\s*/)
+    const clauses = sub.split(CLAUSE_SPLIT)
     let current = ''
 
     for (const clause of clauses) {

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.1] - 2026-11-22
+
+### Fixed
+- **Chinese (and Other Native Scripts) Keep Their Question Marks, Exclamations and Commas**: the chunker used to rewrite `？` and `！` into plain full stops and every `，` / `、` into a spaced ASCII comma, so Chinese read aloud came out flat — questions and exclamations lost their rising/falling tone and each comma added a fake word break. Native terminal marks and clause commas now reach the TTS engine exactly as written, for every script with its own punctuation (Arabic `،` / `؟`, Devanagari `।`, Ethiopic `።`, and CJK marks included). Only a sentence the author left unterminated gets a synthesized full stop, and a trailing comma is dropped instead of being followed by one. Decorative CJK brackets (`「」`, `『』`, `《》`) still normalize to a native period so Chirp3's sentence-length check stays happy; commas stay tight so numbers like `1,000` are spoken as one number.
+
 ## [13.15.0] - 2026-11-15
 
 ### Added
