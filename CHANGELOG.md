@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.2] - 2026-11-22
+
+### Fixed
+- **Repeated Marks Are No Longer Spoken Out Loud**: emphatic punctuation like `？？`, `！！！`, `?!` used to be split into a normal sentence plus a bare mark chunk, and Google Cloud TTS read that bare `？` / `!` literally as "question mark" / "exclamation mark". A run of marks now stays with the sentence it ends, so `真的吗？？` and `What??` are each spoken as one sentence with the intended emphasis. The fix also holds when the run sits before a closing bracket (`「真的吗？？」`) or mixes with ellipses (`Done...!!`).
+
 ## [13.15.1] - 2026-11-22
 
 ### Fixed

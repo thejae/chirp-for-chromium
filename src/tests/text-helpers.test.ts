@@ -160,4 +160,21 @@ describe('splitLongSentence', () => {
       ])
     },
   )
+
+  test(
+    'never emits a bare run of punctuation as its own chunk',
+    () => {
+      // Regression: the pre-split in chunk() cut after every single terminal
+      // mark, so "？？" became ["真的吗？", "？"]; the bare "？" was then
+      // read aloud literally as "question mark". Repeated marks are emphatic
+      // punctuation, not standalone text, and Intl.Segmenter already keeps a
+      // run like "？？" or "!!!" with the sentence it ends.
+      expect('真的吗？？'.chunk()).toEqual(['真的吗？？'])
+      expect('太好了！！！'.chunk()).toEqual(['太好了！！！'])
+      expect('What??'.chunk()).toEqual(['What??'])
+      expect('Really!!!'.chunk()).toEqual(['Really!!!'])
+      expect('真的吗？！'.chunk()).toEqual(['真的吗？！'])
+      expect('What? Really?'.chunk()).toEqual(['What?', 'Really?'])
+    },
+  )
 })

@@ -136,8 +136,12 @@ String.prototype.chunk = function () {
   if (this.isSSML()) return this.chunkSSML()
 
   const rawText = String(this)
+  // Split on newlines and on a terminal mark followed by whitespace. Do not
+  // split on adjacent marks: `？？` / `!!` are emphatic punctuation, and a
+  // bare mark chunk would be read aloud literally as "question mark". The
+  // sentence segmenter handles CJK boundaries without a manual split.
   const linesAndCjkSentences = rawText
-    .split(/\r?\n+|(?<=[。！？；!?])\s*/)
+    .split(/\r?\n+|(?<=[。！？；!?])(?=\s)/)
     .map((s) => s.trim())
     .filter(Boolean)
 
