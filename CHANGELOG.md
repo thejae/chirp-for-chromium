@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.9] - 2026-11-23
+
+### Fixed
+- **Stopping No Longer Ends The Same Session Twice**: the Stop handler and the interrupted read loop each tore down the session, sending duplicate highlight-clear messages and resetting player state twice. Teardown is now a no-op once the session has already ended.
+
 ## [13.15.8] - 2026-11-23
 
 ### Fixed

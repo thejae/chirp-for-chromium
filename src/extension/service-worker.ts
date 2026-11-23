@@ -45,6 +45,7 @@ async function updatePlaybackSessionState() {
  * path of readAloud and stopReading must run the same reset, so it lives here.
  */
 async function endPlaybackSession() {
+  if (!playing) return
   playing = false
   paused = false
   totalChunks = 0
