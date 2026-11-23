@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.6] - 2026-11-23
+
+### Fixed
+- **Word Highlights Stay On The Page You Started Reading**: highlight, pause, resume and session-end messages used to be sent to whichever tab happened to be active at that moment. Switching tabs mid-read sent them to the new tab and left the original page stuck with its highlight overlay. The tab that started the read is now remembered for the whole session.
+
 ## [13.15.5] - 2026-11-23
 
 ### Fixed

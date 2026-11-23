@@ -22,6 +22,7 @@ let chunkLengths: number[] = []
 let totalChars = 0
 let completedChars = 0
 let highlightingEnabled = true
+let sessionTabId = null
 let bootstrappedResolver = null
 const bootstrapped = new Promise((resolve) => (bootstrappedResolver = resolve))
 
@@ -58,6 +59,7 @@ async function endPlaybackSession() {
   if (highlightingEnabled) {
     await sendMessageToCurrentTab({ id: 'highlightSessionEnd' })
   }
+  sessionTabId = null
 }
 
 // Bootstrap -------------------------------------------------------------------
@@ -176,6 +178,14 @@ export const handlers = {
     // instead of pushing the same text into the shared queue a second time.
     playing = true
     paused = false
+
+    // Remember where the selection lives before anything can switch tabs, so
+    // every highlight message in this session goes back to the same page.
+    const [sourceTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    })
+    sessionTabId = sourceTab?.id ?? null
 
     await appendLog(
       'INFO',
@@ -942,11 +952,21 @@ function retrieveSelection() {
   return window.getSelection()?.toString()
 }
 
-async function sendMessageToCurrentTab(event) {
+async function sendMessageToCurrentTab(event, tabId = sessionTabId) {
   console.log('Sending message to current tab...')
 
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-  const currentTab = tabs[0]
+  let currentTab
+  if (tabId) {
+    try {
+      currentTab = await chrome.tabs.get(tabId)
+    } catch {
+      console.warn('Source tab no longer exists. Aborting message send.')
+      return
+    }
+  } else {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    currentTab = tabs[0]
+  }
 
   if (
     !currentTab?.id ||
