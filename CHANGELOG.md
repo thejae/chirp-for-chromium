@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.10] - 2026-11-23
+
+### Fixed
+- **Corrupt Local Data No Longer Breaks The Sandbox**: if the text saved by the Sandbox view was truncated or hand-edited into invalid JSON, parsing it threw while the popup was rendering and the whole interface failed to load. Bad data now falls back to the empty default and is overwritten on the next save.
+
 ## [13.15.9] - 2026-11-23
 
 ### Fixed

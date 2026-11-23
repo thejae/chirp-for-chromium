@@ -13,9 +13,14 @@ export function useLocalStorage(key, defaultValue) {
   return [value, setValue]
 }
 
-function getLocalStorageValue(key, defaultValue) {
+export function getLocalStorageValue(key, defaultValue) {
   const saved = localStorage.getItem(key)
-  const initial = JSON.parse(saved)
+  let initial
+  try {
+    initial = JSON.parse(saved)
+  } catch {
+    // A stale or hand-edited value should not break the whole popup.
+  }
 
   return initial || defaultValue
 }
