@@ -14,7 +14,7 @@ ApiKeyForm.Content = function ({ form, sync, setSync }) {
         type="password"
         error={form.error}
         label="Google Cloud API key"
-        placeholder="Ex: AIzaSyDRIlE4ioDeZ03fya3385XeyUAvMorxWjw"
+        placeholder="YOUR_API_KEY"
         value={sync.apiKey}
         onChange={(apiKey) => setSync({ ...sync, apiKey, apiKeyValid: false })}
       />

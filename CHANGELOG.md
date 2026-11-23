@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.11] - 2026-11-23
+
+### Changed
+- **The API Key Field No Longer Shows A Fake Key**: the example in the input looked like a real Google key, which was easy to mistake for a working value or a leaked credential. The placeholder now plainly reads `YOUR_API_KEY`.
+
 ## [13.15.10] - 2026-11-23
 
 ### Fixed
