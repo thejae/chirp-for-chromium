@@ -10,6 +10,7 @@ import { useStore } from '../../../hooks/useStore.js'
 import { errorStore } from '../../extension.js'
 import { isError } from '../../helpers/error-helpers.js'
 import { getCurrentVoice } from '../../helpers/voice-helpers.js'
+import { isSSMLText } from '../../helpers/text-helpers.js'
 
 /**
  * Interactive text/SSML synthesis studio showing the currently active voice
@@ -38,6 +39,7 @@ export function Sandbox() {
     ? activeVoice.split('-').slice(2).join(' ')
     : 'Default voice'
   const isPlaying = playing || Boolean(session?.playing)
+  const ssmlDetected = isSSMLText(text)
 
   function handleValidation() {
     if (!sync.apiKeyValid) {
@@ -120,7 +122,16 @@ export function Sandbox() {
           className="h-full"
         />
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xxs text-neutral-500 dark:text-neutral-400 tabular-nums">
+          <span
+            role="status"
+            title={
+              ssmlDetected
+                ? 'SSML detected — sent to the API as SSML markup'
+                : 'Plain text sent to the API as text'
+            }
+            className="text-xxs text-neutral-500 dark:text-neutral-400 tabular-nums"
+          >
+            {ssmlDetected ? 'SSML · ' : ''}
             {(text?.length || 0).toLocaleString()} characters
           </span>
           <div className="flex gap-2 w-fit ml-auto">

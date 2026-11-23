@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { splitLongSentence } from '../extension/helpers/text-helpers.js'
+import {
+  isSSMLText,
+  splitLongSentence,
+  synthesizeInput,
+} from '../extension/helpers/text-helpers.js'
 
 // Mirrors the limits inside text-helpers.js: the clause budget enforced
 // before the terminating punctuation is appended.
@@ -177,4 +181,63 @@ describe('splitLongSentence', () => {
       expect('What? Really?'.chunk()).toEqual(['What?', 'Really?'])
     },
   )
+})
+
+describe('SSML input', () => {
+  const pastedSsml =
+    '\n  <speak xml:lang="en-US">Hello <break time="1s"/>world</speak>\n'
+
+  test('detects SSML with attributes and surrounding whitespace', () => {
+    expect(isSSMLText(pastedSsml)).toBe(true)
+    expect(isSSMLText('<speak>Hello</speak>')).toBe(true)
+  })
+
+  test('does not treat plain text or a markup fragment as SSML', () => {
+    expect(isSSMLText('<speak>Hello</speak> and more')).toBe(false)
+    expect(isSSMLText('Hello <break time="1s"/>')).toBe(false)
+    expect(isSSMLText('')).toBe(false)
+  })
+
+  test('sends SSML to the API in ssml, exactly as entered apart from outer whitespace', () => {
+    const input = synthesizeInput(pastedSsml)
+    expect(input).toEqual({ ssml: pastedSsml.trim() })
+
+    const body = JSON.stringify({ input })
+    expect(body).toContain('"ssml"')
+    expect(body).not.toContain('"text"')
+  })
+
+  test('keeps plain text in the text field', () => {
+    expect(synthesizeInput('Hello world')).toEqual({ text: 'Hello world' })
+  })
+
+  test('chunk() leaves pasted SSML byte-for-byte intact when it fits one request', () => {
+    const chunks = pastedSsml.chunk()
+    expect(chunks).toHaveLength(1)
+    expect(chunks[0]).toBe(pastedSsml.trim())
+    expect(synthesizeInput(chunks[0])).toEqual({ ssml: pastedSsml.trim() })
+  })
+
+  test('long SSML splits into complete documents that keep the original opening tag', () => {
+    const openTag = '<speak xml:lang="en-US">'
+    const inner = Array.from(
+      { length: 200 },
+      (_, i) => `<p>Line ${i}: a short sentence.</p>`,
+    ).join('')
+    const ssml = `${openTag}${inner}</speak>`
+
+    const chunks = ssml.chunk()
+    expect(chunks.length).toBeGreaterThan(1)
+    for (const chunk of chunks) {
+      expect(chunk.startsWith(openTag)).toBe(true)
+      expect(chunk.endsWith('</speak>')).toBe(true)
+      expect(chunk.length).toBeLessThanOrEqual(5000)
+      expect(synthesizeInput(chunk)).toHaveProperty('ssml')
+    }
+    expect(
+      chunks
+        .map((chunk) => chunk.slice(openTag.length, -'</speak>'.length))
+        .join(''),
+    ).toBe(inner)
+  })
 })

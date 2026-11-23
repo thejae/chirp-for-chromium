@@ -10,6 +10,25 @@ const CJK_REGEX = /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\
 const MAX_SENTENCE_CHARS = 80
 const MAX_CJK_SENTENCE_CHARS = 35
 
+// Google expects one complete <speak> document in `input.ssml`. Real SSML often
+// carries attributes (xml:lang, version, xmlns) and is pasted with surrounding
+// whitespace, so recognize the opening tag rather than a literal '<speak>' and
+// ignore whitespace outside the document.
+const SSML_DOCUMENT = /^<speak(?:\s[^>]*)?>([\s\S]*)<\/speak>$/
+
+/**
+ * Builds the Google Cloud TTS `input` field. SSML must travel in `ssml` — as
+ * written — or the API reads the tags out loud as plain text.
+ */
+export function synthesizeInput(text) {
+  const source = String(text ?? '')
+  return isSSMLText(source) ? { ssml: source.trim() } : { text: source }
+}
+
+export function isSSMLText(text) {
+  return SSML_DOCUMENT.test(String(text ?? '').trim())
+}
+
 // Native marks carry prosody an ASCII full stop cannot: `？` rises at the end,
 // `！` is emphatic, and `，` / `、` ask for a short beat without a word break.
 // Keep them as written for every script the engine understands (CJK, Arabic,
@@ -161,38 +180,44 @@ String.prototype.chunk = function () {
 
 String.prototype.chunkSSML = function () {
   const maxChunkSize = 5000
-  const speakStartTag = '<speak>'
+  const source = String(this).trim()
   const speakEndTag = '</speak>'
+  const match = SSML_DOCUMENT.exec(source)
+  // Guard against being called directly on non-SSML text.
+  if (!match) return [source]
+
+  // Keep the author's own opening tag (including any attributes) on every
+  // chunk; replacing it with a bare '<speak>' would change the language and
+  // namespace the SSML was written for.
+  const speakStartTag = source.slice(0, source.indexOf('>') + 1)
+  const maxContentSize =
+    maxChunkSize - speakStartTag.length - speakEndTag.length
+  const content = match[1]
   const chunks = []
   let currentChunk = ''
 
-  const content = this.slice(speakStartTag.length, -speakEndTag.length)
+  const pushChunk = () => {
+    if (currentChunk) chunks.push(speakStartTag + currentChunk + speakEndTag)
+  }
 
   const regex = /(<[^>]*>|[^<]+)/g
-  let match
+  let element
 
-  while ((match = regex.exec(content)) !== null) {
-    const element = match[0]
+  while ((element = regex.exec(content)) !== null) {
+    const token = element[0]
 
-    if (
-      currentChunk.length + element.length >
-      maxChunkSize - (speakStartTag.length + speakEndTag.length)
-    ) {
-      chunks.push(speakStartTag + currentChunk + speakEndTag)
+    if (currentChunk && currentChunk.length + token.length > maxContentSize) {
+      pushChunk()
       currentChunk = ''
     }
 
-    currentChunk += element
+    currentChunk += token
   }
 
-  if (currentChunk) {
-    chunks.push(speakStartTag + currentChunk + speakEndTag)
-  }
-
+  pushChunk()
   return chunks
 }
 
 String.prototype.isSSML = function () {
-  const trimmedText = this.trim()
-  return trimmedText.startsWith('<speak>') && trimmedText.endsWith('</speak>')
+  return isSSMLText(this)
 }

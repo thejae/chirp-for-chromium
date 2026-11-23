@@ -1,0 +1,367 @@
+<!doctype html>
+<!--
+  PROTOTYPE / THROWAWAY — mockups only, not shipped with the extension.
+  Question: how should the floating selection toolbar hold its own on dark web pages?
+
+  Four variants of the same component over the same #101319 article surface:
+    current = today's dark pill (baseline)
+    A = dark pill + hairline ring + blue halo (lift, keep the dark look)
+    B = forced light frosted material (maximum contrast, ignores popup theme)
+    C = split hierarchy: gradient action slab + utility capsule (boldest)
+
+  Open board: selection-toolbar-prototype.html
+  Focus one:  selection-toolbar-prototype.html?variant=A   (A | B | C | current)
+  Arrow keys cycle; the bottom bar does too.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chirp · selection toolbar on dark pages (prototype)</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #07090d;
+        --line: #222936;
+        --muted: #8b95a7;
+        --ink: #e9edf5;
+        --site: #101319;
+        --site-ink: #c9d0dc;
+        --site-dim: #8d97a7;
+        --blue: #60a5fa;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(1100px 600px at 50% -10%, #111a2b 0%, var(--page) 60%);
+        color: var(--ink);
+        font: 14px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1500px; margin: 0 auto; padding: 30px 28px 116px; }
+      .eyebrow {
+        font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+        color: #7aa2f7; font-weight: 700;
+      }
+      h1 { margin: 8px 0 6px; font-size: 26px; line-height: 1.2; letter-spacing: -.025em; }
+      .lede { max-width: 960px; margin: 0; color: #aab4c4; font-size: 13px; }
+      .lede b { color: #e5eaf3; font-weight: 600; }
+      .board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 26px; }
+      body[data-view='focus'] .board { grid-template-columns: minmax(0, 1fr); max-width: 940px; }
+      .panel {
+        background: #0d1117; border: 1px solid var(--line); border-radius: 16px;
+        overflow: hidden; box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
+      }
+      .panel-head {
+        display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+        border-bottom: 1px solid var(--line); background: #111722;
+      }
+      .tag {
+        font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+        padding: 3px 7px; border-radius: 5px; background: #263044; color: #b9c8e0;
+      }
+      .panel.current .tag { background: #3b231c; color: #f3ad8b; }
+      .panel.a .tag { background: #132e4d; color: #93c5fd; }
+      .panel.b .tag { background: #232c3d; color: #e2e8f0; }
+      .panel.c .tag { background: #2b1b46; color: #c4b5fd; }
+      .panel-name { font-size: 13px; font-weight: 650; }
+      .panel-head .why { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+      /* A believable dark article, identical in every panel. */
+      .site {
+        position: relative; height: 424px; padding: 24px 30px 18px;
+        background: var(--site); color: var(--site-ink); overflow: hidden;
+      }
+      body[data-view='focus'] .site { height: 560px; padding: 40px 52px; }
+      .site::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(180deg, transparent 62%, rgba(0, 0, 0, .22));
+      }
+      .site-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+      .site-nav .logo {
+        width: 16px; height: 16px; border-radius: 5px;
+        background: linear-gradient(135deg, #6d8fff, #a855f7);
+      }
+      .site-nav span { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6f7b8e; }
+      .site-nav .crumb { margin-left: auto; color: #525d6f; letter-spacing: .04em; text-transform: none; }
+      .kicker { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #7f9bd0; }
+      .site h2 {
+        margin: 6px 0 8px; color: #f2f5fa; font-size: 24px; line-height: 1.22;
+        letter-spacing: -.02em; max-width: 560px;
+      }
+      body[data-view='focus'] .site h2 { font-size: 30px; }
+      .byline { font-size: 12px; color: #727e91; margin-bottom: 30px; }
+      .site p { font-size: 12.5px; line-height: 1.78; margin: 0 0 18px; max-width: 620px; }
+      body[data-view='focus'] .site p { font-size: 14px; max-width: 700px; }
+      .site .drop::first-letter { font-size: 30px; color: #e8edf6; float: left; line-height: 1; margin: 2px 5px 0 0; }
+      mark.sel {
+        color: #f8fafc; background: rgba(59, 130, 246, .34);
+        box-shadow: 0 0 0 1px rgba(96, 165, 250, .34); border-radius: 2px; padding: 1px 0;
+      }
+      .hotspot { display: inline; }
+      /* Zero-size anchor at the first line of the selection, so the mockup's
+         absolute placement behaves like range.getBoundingClientRect() in the
+         real toolbar. An inline element's containing block spans every line. */
+      .anchor { position: relative; display: inline-block; width: 0; height: 0; }
+
+      /* ---------- Current (baseline) ---------- */
+      .tb {
+        position: absolute; bottom: 38px; left: 0; transform: translateX(-50%);
+        display: flex; flex-direction: column; align-items: stretch; z-index: 5;
+      }
+      .tb .row { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+      .tb .surface {
+        display: flex; align-items: center; gap: 4px; padding: 3px;
+        border-radius: 999px;
+      }
+      .tb .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        height: 24px; min-width: 24px; border-radius: 999px; border: 0;
+        font: 600 11px/1 inherit; font-family: inherit; cursor: default;
+      }
+      .tb svg { width: 12px; height: 12px; stroke-width: 2.2; }
+      .tb .play svg { fill: currentColor; }
+      .tb .sep { width: 1px; height: 14px; margin: 0 2px; }
+      .tb .bar { display: block; height: 2px; border-radius: 0 0 999px 999px; overflow: hidden; }
+      .tb .bar i { display: block; height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); }
+
+      .tb-current .surface {
+        background: rgba(23, 23, 23, .95); backdrop-filter: blur(12px);
+        color: #fff; border: 1px solid rgba(64, 64, 64, .8);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+      }
+      .tb-current .primary { padding: 0 10px 0 8px; background: #2563eb; color: #fff; }
+      .tb-current .primary:hover { background: #3b82f6; }
+      .tb-current .icon { background: transparent; color: #d4d4d8; }
+      .tb-current .stop { background: #262626; color: #d4d4d8; }
+      .tb-current .sep { background: #404040; }
+      .tb-current .bar { background: #262626; }
+
+      /* ---------- A: halo ---------- */
+      .tb-halo .surface {
+        position: relative;
+        background: rgba(31, 41, 55, .96); backdrop-filter: blur(16px) saturate(140%);
+        color: #fff; border: 1px solid rgba(255, 255, 255, .34);
+        box-shadow: 0 16px 38px rgba(0, 0, 0, .68), 0 0 0 3px rgba(59, 130, 246, .10),
+          0 0 26px rgba(59, 130, 246, .24), inset 0 1px 0 rgba(255, 255, 255, .10);
+      }
+      .tb-halo .surface::before {
+        content: ''; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3px;
+        border-radius: 3px; background: #60a5fa; box-shadow: 0 0 10px #60a5fa;
+      }
+      .tb-halo .primary {
+        padding: 0 11px 0 9px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff; box-shadow: 0 0 16px rgba(59, 130, 246, .5);
+      }
+      .tb-halo .icon { background: transparent; color: #e5e7eb; }
+      .tb-halo .stop { background: rgba(255, 255, 255, .12); color: #fff; }
+      .tb-halo .sep { background: rgba(255, 255, 255, .28); }
+      .tb-halo .bar { height: 3px; background: rgba(255, 255, 255, .16); }
+      .tb-halo .bar i { background: linear-gradient(90deg, #60a5fa, #3b82f6); box-shadow: 0 0 8px #60a5fa; }
+
+      /* ---------- B: forced light frosted material ---------- */
+      .tb-frost .surface {
+        background: rgba(250, 250, 250, .94); backdrop-filter: blur(20px) saturate(170%);
+        color: #111827; border: 1px solid rgba(255, 255, 255, .78);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, .58), 0 0 0 1px rgba(0, 0, 0, .34),
+          inset 0 1px 0 rgba(255, 255, 255, .95);
+      }
+      .tb-frost .primary { padding: 0 11px 0 9px; background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37, 99, 235, .35); }
+      .tb-frost .icon { background: transparent; color: #374151; }
+      .tb-frost .stop { background: #eef0f4; color: #1f2937; }
+      .tb-frost .sep { background: #d6dae2; }
+      .tb-frost .bar { background: #dfe3ea; }
+
+      /* ---------- C: split hierarchy slab ---------- */
+      .tb-slab .surface { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; padding: 0; gap: 8px; }
+      .tb-slab .primary {
+        height: 36px; padding: 0 15px 0 12px; border-radius: 12px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff;
+        font-size: 12px; font-weight: 700; letter-spacing: .01em;
+        box-shadow: 0 12px 28px rgba(37, 99, 235, .48), 0 0 0 1px rgba(255, 255, 255, .2);
+      }
+      .tb-slab .primary svg { width: 13px; height: 13px; }
+      .tb-slab .utils {
+        display: flex; align-items: center; gap: 3px; padding: 4px;
+        border-radius: 12px; background: rgba(17, 24, 39, .96);
+        border: 1px solid rgba(255, 255, 255, .24);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .62), inset 0 1px 0 rgba(255, 255, 255, .08);
+      }
+      .tb-slab .icon { color: #e5e7eb; }
+      .tb-slab .stop { background: rgba(255, 255, 255, .12); color: #fff; }
+      .tb-slab .sep { background: rgba(255, 255, 255, .24); }
+      .tb-slab .bar {
+        position: absolute; left: 0; right: 0; bottom: -5px; height: 3px;
+        border-radius: 99px; background: rgba(255, 255, 255, .16);
+      }
+      .tb-slab .bar i { border-radius: 99px; background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+
+      .caption { padding: 12px 16px 14px; border-top: 1px solid var(--line); background: #0d1117; }
+      .caption .desc { font-size: 12px; color: #c5cede; }
+      .caption .trade { margin-top: 4px; font-size: 12px; color: #8792a4; }
+      .caption .trade b { color: #b6c1d2; font-weight: 600; }
+
+      /* Floating switcher — deliberately not part of the design under review. */
+      .switcher {
+        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 4px; padding: 5px;
+        background: #f8fafc; color: #0f172a; border-radius: 999px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, .6); z-index: 50;
+      }
+      .switcher button {
+        font: 600 11px/1 inherit; font-family: inherit; cursor: pointer;
+        border: 0; background: transparent; color: #475569; border-radius: 999px;
+        padding: 8px 12px;
+      }
+      .switcher button[aria-current='true'] { background: #0f172a; color: #fff; }
+      .switcher .arrow { padding: 8px 10px; font-size: 14px; }
+      .hint { text-align: center; color: #9aa6b7; font-size: 12px; margin-top: 18px; }
+    </style>
+  </head>
+  <body data-view="board">
+    <div class="wrap">
+      <header>
+        <div class="eyebrow">Prototype · visual mockups · not shipped</div>
+        <h1>Floating read-aloud pill on dark web pages</h1>
+        <p class="lede">
+          The toolbar's <b>dark variant follows the extension/OS theme, not the webpage</b>. On a
+          near-black page the <b>#171717 pill with a #404040 border</b> all but disappears. Each
+          panel below shows the same article, the same selection, and the same two toolbar states —
+          only the floating surface changes.
+        </p>
+      </header>
+      <main class="board" id="board"></main>
+      <p class="hint">All four panels use the same #101319 article surface. Switcher and captions are prototype furniture.</p>
+    </div>
+    <nav class="switcher" aria-label="Mockup variant switcher">
+      <button class="arrow" data-variant="prev" aria-label="Previous variant">←</button>
+      <button data-variant="all">All four</button>
+      <button data-variant="current">Current</button>
+      <button data-variant="A">A · Halo</button>
+      <button data-variant="B">B · Frost</button>
+      <button data-variant="C">C · Slab</button>
+      <button class="arrow" data-variant="next" aria-label="Next variant">→</button>
+    </nav>
+
+    <script>
+      const icons = {
+        play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+        pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-linecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+        stop: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>',
+        download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      }
+
+      const cssName = { current: 'current', A: 'halo', B: 'frost', C: 'slab' }
+
+      function toolbar(variant, state) {
+        const play =
+          state === 'idle'
+            ? `<button class="btn primary play">${icons.play}<span>Read</span></button>`
+            : `<button class="btn primary play">${icons.pause}</button>`
+        const stop = state === 'idle' ? '' : `<button class="btn stop">${icons.stop}</button>`
+        const download = `<button class="btn icon">${icons.download}</button>`
+        const bar = state === 'idle' ? '' : `<span class="bar"><i style="width:42%"></i></span>`
+        // C uses a separate utility capsule instead of one continuous pill.
+        const body =
+          variant === 'C'
+            ? `<span class="surface">
+                 ${play}
+                 <span class="utils">${stop}${stop ? '<span class="sep"></span>' : ''}${download}</span>
+               </span>${bar}`
+            : `<span class="surface">
+                 <span class="row">${play}${stop}<span class="sep"></span>${download}</span>
+                 ${bar}
+               </span>`
+        return `<span class="anchor"><span class="tb tb-${cssName[variant]}" aria-hidden="true">${body}</span></span>`
+      }
+
+      const article = (variant) => `
+        <div class="site">
+          <div class="site-nav"><div class="logo"></div><span>Field Notes</span><span class="crumb">Culture / 8 min read</span></div>
+          <div class="kicker">The night shift</div>
+          <h2>The city that never sleeps is being rewritten by the people who work while it does</h2>
+          <div class="byline">By Mara Ellis · March 14, 2026</div>
+          <p class="drop">At 3 a.m. the delivery vans are the only traffic on Mercer Street, and the
+            <span class="hotspot"><mark class="sel">rhythm of the overnight crew has become the city's quiet infrastructure</mark>${toolbar(variant, 'idle')}</span>.
+            Nurses, bakers, cleaners and drivers keep a parallel timetable running beneath the one most of us know.</p>
+          <p>Night work used to be invisible by design. Now a loose network of shift workers is shaping
+            where the late trains stop, which pharmacies stay open, and
+            <span class="hotspot"><mark class="sel">how a neighbourhood decides it is safe to be awake after midnight</mark>${toolbar(variant, 'playing')}</span>.
+            The effects are hard to measure and impossible to ignore.</p>
+        </div>`
+
+      const variants = [
+        {
+          key: 'current', cls: 'current', tag: 'Baseline',
+          name: 'Today — dark pill on dark page',
+          desc: '#171717 / 95% surface, 80%-opacity #404040 border, 2px progress, blue Read button.',
+          trade: '<b>Why it fails:</b> against #101319 the pill and its border are almost the same luminance as the page.',
+        },
+        {
+          key: 'A', cls: 'a', tag: 'Option A', name: 'Halo — lift the dark pill',
+          desc: 'Brighter #1f2937 glass, white hairline ring, blue ambient glow, blue edge spine, 3px lit progress.',
+          trade: '<b>Trade-off:</b> keeps the dark aesthetic and scales to any page; the glow must stay restrained or it reads as a notification.',
+        },
+        {
+          key: 'B', cls: 'b', tag: 'Option B', name: 'Frost — light material, always',
+          desc: 'Force a near-white frosted surface on every site; dark text, blue primary, 1px dark outer ring.',
+          trade: '<b>Trade-off:</b> unbeatable legibility on dark pages; visually louder and can feel pasted-on in dark editorial layouts.',
+        },
+        {
+          key: 'C', cls: 'c', tag: 'Option C', name: 'Slab — split the hierarchy',
+          desc: 'Big gradient Read action plus a separate dark utility capsule; 3px progress line under both.',
+          trade: '<b>Trade-off:</b> the primary action is unmissable; wider footprint (~215px) and more assertive than a context menu.',
+        },
+      ]
+
+      const board = document.getElementById('board')
+      function render(selected) {
+        document.body.dataset.view = selected === 'all' ? 'board' : 'focus'
+        const shown = selected === 'all' ? variants : variants.filter((v) => v.key === selected)
+        board.innerHTML = shown
+          .map(
+            (v) => `<article class="panel ${v.cls}">
+              <div class="panel-head"><span class="tag">${v.tag}</span><span class="panel-name">${v.name}</span><span class="why">${v.key === 'current' ? 'as shipped' : 'proposal'}</span></div>
+              ${article(v.key)}
+              <div class="caption"><div class="desc">${v.desc}</div><div class="trade">${v.trade}</div></div>
+            </article>`,
+          )
+          .join('')
+        document.querySelectorAll('.switcher button').forEach((b) => {
+          const key = b.dataset.variant
+          if (key === 'prev' || key === 'next') return
+          b.setAttribute('aria-current', String(key === selected))
+        })
+      }
+
+      const order = ['all', 'current', 'A', 'B', 'C']
+      function fromUrl() {
+        const key = new URLSearchParams(location.search).get('variant')
+        return order.includes(key) ? key : 'all'
+      }
+      function go(key) {
+        const url = new URL(location.href)
+        if (key === 'all') url.searchParams.delete('variant')
+        else url.searchParams.set('variant', key)
+        history.replaceState(null, '', url)
+        render(key)
+      }
+      document.querySelector('.switcher').addEventListener('click', (e) => {
+        const key = e.target.dataset.variant
+        if (!key) return
+        if (key === 'prev' || key === 'next') {
+          const i = order.indexOf(fromUrl())
+          go(order[(i + (key === 'next' ? 1 : order.length - 1)) % order.length])
+        } else go(key)
+      })
+      addEventListener('keydown', (e) => {
+        if (/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '')) return
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          const i = order.indexOf(fromUrl())
+          go(order[(i + (e.key === 'ArrowRight' ? 1 : order.length - 1)) % order.length])
+        }
+      })
+      render(fromUrl())
+    </script>
+  </body>
+</html>

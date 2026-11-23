@@ -1,4 +1,4 @@
-import './helpers/text-helpers.js'
+import { synthesizeInput } from './helpers/text-helpers.js'
 import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
 import { resolveVoices } from './helpers/voice-helpers.js'
@@ -451,11 +451,11 @@ export const handlers = {
     const url = `${process.env.TTS_API_URL}/text:synthesize?key=${encodeURIComponent(key)}`
     const headers = { 'Content-Type': 'application/json' }
 
-    let ssml = undefined
-    if (text.isSSML()) {
-      ssml = text
-      text = undefined
-    }
+    // SSML typed into the Sandbox must reach the API in `input.ssml`, exactly
+    // as written; plain text stays in `input.text` and keeps the normal
+    // sentence splitting. This is the only place the request body is built,
+    // so Read aloud, Download and the Sandbox all go through it.
+    const input = synthesizeInput(text)
 
     // Normalize UI encoding aliases to encodings supported across all Google Cloud TTS voices
     // (Chirp/Journey/Studio voices reject legacy MP3_64_KBPS and require MP3, OGG_OPUS, or LINEAR16).
@@ -466,7 +466,7 @@ export const handlers = {
         ? 'MP3'
         : encoding
 
-    const rawContent = text || ssml || ''
+    const rawContent = input.ssml || input.text || ''
     const hasCjk = /[\u3400-\u9fff]/.test(rawContent)
 
     // Chunk loops hand us a pair resolved once per session; a standalone call
@@ -488,12 +488,7 @@ export const handlers = {
 
     const buildRequestBody = (overrideVoice?: string, overrideLang?: string) =>
       JSON.stringify({
-        input:
-          text !== undefined
-            ? { text }
-            : ssml !== undefined
-            ? { ssml }
-            : { text: '' },
+        input,
         voice: {
           languageCode: overrideLang || voiceLanguageCode,
           name: overrideVoice || voiceName,

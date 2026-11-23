@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.4] - 2026-11-23
+
+### Fixed
+- **Selection Toolbar Now Stands Out on Dark Pages**: the floating pill's dark style used a near-black `#171717` surface with a low-opacity grey border, so it all but vanished against the near-black article pages where it appears most. It now uses the smoked-glass treatment from the mockups: a translucent dark slate surface (`rgba(28, 34, 48, 0.6)`), a 2px white hairline border, `blur(5px)` with `saturate(450%)` so colours from the page diffuse through it, and the same 2px gradient reading-progress bar at the bottom as before. Light pages keep their existing frosted white pill.
+
+## [13.15.3] - 2026-11-23
+
+### Fixed
+- **SSML Typed Into the Sandbox Now Reaches Google as SSML**: pasted `<speak>` markup with a leading newline was chopped into malformed markup (`<speak>ak>…`), and SSML with a normal attribute such as `xml:lang="en-US"` was treated as plain text, with the tags read out loud. Both cases are now recognized as SSML and sent verbatim in the API's `ssml` field instead of `text`. Long SSML is still split at tag boundaries, but every piece keeps the original `<speak>` tag and stays within the API's 5,000-character limit. The Sandbox footer shows **SSML** when your input was recognized.
+
 ## [13.15.2] - 2026-11-22
 
 ### Fixed
