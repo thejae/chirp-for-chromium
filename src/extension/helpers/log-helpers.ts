@@ -182,18 +182,16 @@ export async function loggedFetch(
     try {
       const parsed = JSON.parse(options.body)
       if (parsed && typeof parsed === 'object') {
+        // `input` holds the text (or SSML) being synthesized. Log its shape,
+        // never its contents — the diagnostic log is exportable and shared.
+        const { input, ...rest } = parsed
         requestBodyPreview = {
-          ...parsed,
-          ...(typeof parsed.text === 'string' && {
-            text:
-              parsed.text.length > 120
-                ? `${parsed.text.slice(0, 120)}… (${parsed.text.length} chars)`
-                : parsed.text,
-          }),
+          ...rest,
+          ...(input !== undefined && { input: '[text omitted]' }),
         }
       }
     } catch {
-      requestBodyPreview = options.body
+      requestBodyPreview = '[unparseable request body]'
     }
   }
 

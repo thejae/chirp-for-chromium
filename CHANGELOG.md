@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.12] - 2026-11-23
+
+### Fixed
+- **Exportable Logs No Longer Contain The Text You Read**: verbose API logging copied up to 120 characters of the passage being synthesized into the diagnostic log, and the surrounding request body included all of it. Logs now record only request metadata, never the text or your API key, and the privacy policy explains what is kept on your device and how to clear it.
+
 ## [13.15.11] - 2026-11-23
 
 ### Changed

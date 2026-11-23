@@ -37,7 +37,26 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">3. Data Security</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            3. Data Stored On Your Device
+          </h2>
+          <p>
+            Your API key, voice selection and preferences are kept in Chrome's
+            synced storage. Playback state and a short diagnostic log are kept
+            in session storage and go away when the browser closes. The only
+            data sent to a third party is the text you ask us to speak, sent to
+            Google Cloud for synthesis.
+          </p>
+          <p className="mt-2">
+            The diagnostic log records request endpoints, status codes, timing
+            and error messages. It never contains the text you asked us to read
+            or your API key. You can review and clear it from the Logs page in
+            the extension.
+          </p>
+        </section>
+
+        <section className="mb-6">
+          <h2 className="text-2xl font-bold mb-2">4. Data Security</h2>
           <p>
             Your data is important to us and we have implemented measures to
             ensure its security. However, no method of data transmission or
@@ -48,7 +67,7 @@ export function PrivacyPolicyPage() {
 
         <section className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
-            4. Changes to Our Privacy Policy
+            5. Changes to Our Privacy Policy
           </h2>
           <p>
             We may update this privacy policy from time to time. We will notify
@@ -59,7 +78,7 @@ export function PrivacyPolicyPage() {
         </section>
 
         <section className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">5. Contact Us</h2>
+          <h2 className="text-2xl font-bold mb-2">6. Contact Us</h2>
           <p>
             If you have any questions about this privacy policy or our
             practices, please file a report on{' '}
