@@ -471,8 +471,11 @@ export const handlers = {
       return error
     }
 
-    const url = `${process.env.TTS_API_URL}/text:synthesize?key=${encodeURIComponent(key)}`
-    const headers = { 'Content-Type': 'application/json' }
+    const url = `${process.env.TTS_API_URL}/text:synthesize`
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': key,
+    }
 
     // SSML typed into the Sandbox must reach the API in `input.ssml`, exactly
     // as written; plain text stays in `input.text` and keeps the normal
@@ -679,7 +682,8 @@ export const handlers = {
 
     try {
       const response = await loggedFetch(
-        `${process.env.TTS_API_URL}/voices?key=${encodeURIComponent(sync.apiKey)}`,
+        `${process.env.TTS_API_URL}/voices`,
+        { headers: { 'X-Goog-Api-Key': sync.apiKey } },
       )
       return response.ok
     } catch (e) {
@@ -695,9 +699,9 @@ export const handlers = {
       return []
     }
 
-    const response = await loggedFetch(
-      `${process.env.TTS_API_URL}/voices?key=${encodeURIComponent(sync.apiKey)}`,
-    )
+    const response = await loggedFetch(`${process.env.TTS_API_URL}/voices`, {
+      headers: { 'X-Goog-Api-Key': sync.apiKey },
+    })
     if (!response.ok) throw new Error('Failed to fetch voices')
 
     const payload = await response.json()
