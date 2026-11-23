@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.8] - 2026-11-23
+
+### Fixed
+- **Opening A Settings View No Longer Rewrites Your Preferences**: each hook instance used to write the entire synced settings object back to Chrome the moment it loaded, so opening the popup fired redundant writes that could clobber a value another view had just changed and ate into the sync quota. Loading now only reads.
+
 ## [13.15.7] - 2026-11-23
 
 ### Fixed

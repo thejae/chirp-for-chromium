@@ -19,7 +19,6 @@ export function useSync() {
   }
 
   async function handleLoad(sync) {
-    await setSync(sync)
     setReady(true)
     setValue(sync)
   }
