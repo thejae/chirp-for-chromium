@@ -1,6 +1,10 @@
 import { synthesizeInput } from './helpers/text-helpers.js'
 import { fileExtMap, mergeAudioChunks } from './helpers/file-helpers.js'
 import { createError, isError } from './helpers/error-helpers.js'
+import {
+  respondWithHandlerResult,
+  resolveTargetTab,
+} from './helpers/message-listener-helpers.js'
 import { resolveVoices } from './helpers/voice-helpers.js'
 import { appendLog, clearLogs, loggedFetch } from './helpers/log-helpers.js'
 import {
@@ -101,15 +105,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   ) {
     appendLog('INFO', `Runtime message received: ${id}`, payload)
   }
-  handlers[id](payload).then(sendResponse, (error) =>
-    sendResponse(
-      createError({
-        errorCode: 'MESSAGE_HANDLER_FAILED',
-        errorTitle: 'Something went wrong',
-        errorMessage: error?.message || String(error),
-      }),
-    ),
-  )
+  respondWithHandlerResult(handlers, id, payload, sendResponse)
 
   return true
 })
@@ -957,21 +953,10 @@ function retrieveSelection() {
   return window.getSelection()?.toString()
 }
 
-async function sendMessageToCurrentTab(event, tabId = sessionTabId) {
+async function sendMessageToCurrentTab(event) {
   console.log('Sending message to current tab...')
 
-  let currentTab
-  if (tabId) {
-    try {
-      currentTab = await chrome.tabs.get(tabId)
-    } catch {
-      console.warn('Source tab no longer exists. Aborting message send.')
-      return
-    }
-  } else {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-    currentTab = tabs[0]
-  }
+  const currentTab = await resolveTargetTab(sessionTabId, chrome.tabs)
 
   if (
     !currentTab?.id ||
