@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.5] - 2026-11-23
+
+### Fixed
+- **A Failed Audio Chunk No Longer Freezes Reading**: when the offscreen player rejected playback (blocked autoplay, unreadable audio), the message listener never sent a response, so the service worker waited forever and the docked player stayed on "Reading" with the page highlight stuck. Rejected handlers now reply with an error, and the reader tears down and surfaces the failure instead of hanging.
+
 ## [13.15.4] - 2026-11-23
 
 ### Fixed

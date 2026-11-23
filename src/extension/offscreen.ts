@@ -40,7 +40,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (!offscreen) return
 
   if (!handlers[id]) throw new Error(`No handler for ${id}`)
-  handlers[id](payload).then(sendResponse)
+  handlers[id](payload).then(sendResponse, (error) =>
+    sendResponse({
+      error: true,
+      errorCode: 'OFFSCREEN_HANDLER_FAILED',
+      errorTitle: 'Playback failed',
+      errorMessage: error?.message || String(error),
+    }),
+  )
 
   return true
 })

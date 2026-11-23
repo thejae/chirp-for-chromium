@@ -98,7 +98,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   ) {
     appendLog('INFO', `Runtime message received: ${id}`, payload)
   }
-  handlers[id](payload).then(sendResponse)
+  handlers[id](payload).then(sendResponse, (error) =>
+    sendResponse(
+      createError({
+        errorCode: 'MESSAGE_HANDLER_FAILED',
+        errorTitle: 'Something went wrong',
+        errorMessage: error?.message || String(error),
+      }),
+    ),
+  )
 
   return true
 })
@@ -237,11 +245,16 @@ export const handlers = {
 
         await createOffscreenDocument()
         await appendLog('INFO', `Playing audio chunk ${count + 1}`)
-        await chrome.runtime.sendMessage({
+        const playResult = await chrome.runtime.sendMessage({
           id: 'play',
           payload: { audioUri },
           offscreen: true,
         })
+        if (isError(playResult)) {
+          sendMessageToCurrentTab(playResult)
+          await endPlaybackSession()
+          return playResult
+        }
       } catch (e: any) {
         console.warn('Failed to play audio', e)
         await appendLog('WARN', 'Audio playback interrupted or failed', e?.message)
