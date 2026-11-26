@@ -16,6 +16,48 @@ const MAX_CJK_SENTENCE_CHARS = 35
 // ignore whitespace outside the document.
 const SSML_DOCUMENT = /^<speak(?:\s[^>]*)?>([\s\S]*)<\/speak>$/
 
+// Google caps input.ssml at 5,000 UTF-8 BYTES, not JavaScript characters. A
+// CJK character is 3 bytes and an emoji 4, so char-counting chunks can be
+// three times over the limit while looking fine in the editor.
+const utf8Encoder = new TextEncoder()
+const byteLength = (value) => utf8Encoder.encode(value).length
+
+// An atom is a complete SSML entity or one Unicode code point (the `u` flag
+// keeps surrogate pairs together), so a cut can never break either one.
+const SSML_ATOM = /&(?:[a-zA-Z]+|#\d+|#x[\da-fA-F]+);|[\s\S]/gu
+
+/**
+ * Splits a text run that is itself larger than the byte budget. Cuts happen
+ * only between atoms, preferring the last space so latin words stay whole.
+ */
+function splitTextByBytes(text, maxBytes) {
+  const atoms = text.match(SSML_ATOM) ?? []
+  const pieces = []
+  let current = ''
+  let bytes = 0
+
+  for (const atom of atoms) {
+    const size = byteLength(atom)
+    if (current && bytes + size > maxBytes) {
+      const lastSpace = /\s+\S*$/.exec(current)?.index ?? -1
+      if (lastSpace > 0) {
+        pieces.push(current.slice(0, lastSpace))
+        current = current.slice(lastSpace)
+        bytes = byteLength(current)
+      } else {
+        pieces.push(current)
+        current = ''
+        bytes = 0
+      }
+    }
+    current += atom
+    bytes += size
+  }
+
+  if (current) pieces.push(current)
+  return pieces
+}
+
 /**
  * Builds the Google Cloud TTS `input` field. SSML must travel in `ssml` — as
  * written — or the API reads the tags out loud as plain text.
@@ -129,15 +171,25 @@ export function splitLongSentence(sentence) {
         if (clause.length <= maxChars) {
           current = clause
         } else {
-          for (let i = 0; i < clause.length; i += maxChars) {
-            const slice = clause.slice(i, i + maxChars)
-            if (slice.length === maxChars) {
-              const terminated = ensureTerminalPunctuation(slice)
-              if (terminated && terminated !== '.') output.push(terminated)
-            } else {
-              current = slice
-            }
+          // A clause with no internal separator still has to fit the limit.
+          // Back up to the last space so a chunk never ends (or begins) in the
+          // middle of a word; scripts without spaces and single tokens longer
+          // than the limit keep the fixed-width cut, the only boundary there.
+          let rest = clause
+          while (rest.length > maxChars) {
+            const window = rest.slice(0, maxChars)
+            const lastSpace = /\s+\S*$/.exec(window)?.index ?? 0
+            const cut =
+              /\s/.test(rest[maxChars]) || lastSpace === 0
+                ? maxChars
+                : lastSpace
+            const terminated = ensureTerminalPunctuation(
+              rest.slice(0, cut).trim(),
+            )
+            if (terminated && terminated !== '.') output.push(terminated)
+            rest = rest.slice(cut).trimStart()
           }
+          current = rest
         }
       }
     }
@@ -179,7 +231,7 @@ String.prototype.chunk = function () {
 }
 
 String.prototype.chunkSSML = function () {
-  const maxChunkSize = 5000
+  const maxRequestBytes = 5000
   const source = String(this).trim()
   const speakEndTag = '</speak>'
   const match = SSML_DOCUMENT.exec(source)
@@ -188,16 +240,29 @@ String.prototype.chunkSSML = function () {
 
   // Keep the author's own opening tag (including any attributes) on every
   // chunk; replacing it with a bare '<speak>' would change the language and
-  // namespace the SSML was written for.
+  // namespace the SSML was written for. Both wrapper tags count toward the
+  // 5,000-byte request budget, and attributes add bytes of their own.
   const speakStartTag = source.slice(0, source.indexOf('>') + 1)
-  const maxContentSize =
-    maxChunkSize - speakStartTag.length - speakEndTag.length
+  const maxContentBytes = Math.max(
+    1,
+    maxRequestBytes - byteLength(speakStartTag) - byteLength(speakEndTag),
+  )
   const content = match[1]
   const chunks = []
   let currentChunk = ''
+  let currentBytes = 0
 
   const pushChunk = () => {
     if (currentChunk) chunks.push(speakStartTag + currentChunk + speakEndTag)
+    currentChunk = ''
+    currentBytes = 0
+  }
+
+  const appendToken = (token) => {
+    const size = byteLength(token)
+    if (currentChunk && currentBytes + size > maxContentBytes) pushChunk()
+    currentChunk += token
+    currentBytes += size
   }
 
   const regex = /(<[^>]*>|[^<]+)/g
@@ -206,12 +271,19 @@ String.prototype.chunkSSML = function () {
   while ((element = regex.exec(content)) !== null) {
     const token = element[0]
 
-    if (currentChunk && currentChunk.length + token.length > maxContentSize) {
-      pushChunk()
-      currentChunk = ''
+    // A single tag is indivisible. A text run longer than the remaining
+    // budget (common with CJK prose) must be split at code-point boundaries.
+    if (
+      byteLength(token) > maxContentBytes - currentBytes &&
+      token[0] !== '<'
+    ) {
+      for (const piece of splitTextByBytes(token, maxContentBytes)) {
+        appendToken(piece)
+      }
+      continue
     }
 
-    currentChunk += token
+    appendToken(token)
   }
 
   pushChunk()

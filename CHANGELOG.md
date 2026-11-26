@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.15.15] - 2026-11-23
+
+### Fixed
+- **CJK And Long SSML Now Fits Google's Real Limit**: Google caps each SSML request at 5,000 UTF-8 bytes, but pasted markup was measured in JavaScript characters. Japanese, Chinese or emoji-heavy `<speak>` documents that looked shorter than 5,000 characters could be two or three times over the wire limit and be rejected. Chunks are now measured in bytes, including the opening and closing tags, and a single long text run is cut at code-point boundaries that keep emoji, surrogate pairs and entities such as `&amp;` intact. Short and ASCII SSML is unchanged.
+
+## [13.15.14] - 2026-11-23
+
+### Fixed
+- **Long Passages No Longer Break Words In Two**: when a sentence had no comma to split on and ran past the 80-character limit, the fallback cut at that exact character — turning "natural sounding" into "natural so." / "unding", which Google read as two broken phrases. Long chunks now end at the last whole word before the limit. Scripts without spaces and unusually long single tokens still use a fixed-width cut, and every chunk remains within the TTS limit.
+
+## [13.15.13] - 2026-11-23
+
+### Changed
+- **Thinner Toolbar Outline**: the dark floating selection pill's white hairline border is back to 1px instead of 2px. The smoked-glass fill, 5px blur, 450% saturation, and the gradient reading-progress bar underneath are unchanged.
+
 ## [13.15.12] - 2026-11-23
 
 ### Fixed

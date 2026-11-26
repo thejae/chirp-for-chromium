@@ -279,9 +279,9 @@ export function SelectionToolbar({ enabled, onError }: SelectionToolbarProps) {
       }}
       className={`${transformClass} animate-popup select-none`}
     >
-      {/* Dark variant: F5 smoked glass — 60% slate fill, 2px white hairline,
+      {/* Dark variant: F5 smoked glass — 60% slate fill, 1px white hairline,
           blur 5px, saturation 450%. The progress bar below is unchanged. */}
-      <div className="bg-white/95 dark:bg-[rgba(28,34,48,0.6)] backdrop-blur-md dark:backdrop-blur-[5px] dark:backdrop-saturate-[450%] text-neutral-900 dark:text-white rounded-3xl shadow-lg dark:shadow-xl border border-neutral-200/90 dark:border-2 dark:border-white/30 overflow-hidden whitespace-nowrap">
+      <div className="bg-white/95 dark:bg-[rgba(28,34,48,0.6)] backdrop-blur-md dark:backdrop-blur-[5px] dark:backdrop-saturate-[450%] text-neutral-900 dark:text-white rounded-3xl shadow-lg dark:shadow-xl border border-neutral-200/90 dark:border-white/30 overflow-hidden whitespace-nowrap">
         <div className="flex items-center gap-1 px-1.5 py-1">
           {!isPlaying ? (
             <button
